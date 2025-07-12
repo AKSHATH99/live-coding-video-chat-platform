@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-const socket = io("http://192.168.49.1");
+const socket = io("http://localhost:5000/");
 
 const VideoCallInterface = () => {
   const [stream, setStream] = useState(null);
@@ -10,18 +10,22 @@ const VideoCallInterface = () => {
   const [peerCameraOff, setPeerCameraOff] = useState(false);
   const [callStarted, setCallStarted] = useState(false);
   const [peerConnected, setPeerConnected] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+
 
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
 
+  // Create a new RTCPeerConnection instance
   const peerConnectionRef = useRef(
     new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     })
   );
 
+  // For testing, set a default room ID
   useEffect(() => {
-    // For testing, set a default room ID
     const storedRoom = localStorage.getItem("roomId") || "test-room";
     setRoomID(storedRoom);
     socket.emit("joinRoom", storedRoom);
@@ -38,7 +42,7 @@ const VideoCallInterface = () => {
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = mediaStream;
           }
-          
+
           // Add tracks to peer connection
           mediaStream.getTracks().forEach((track) => {
             peerConnectionRef.current.addTrack(track, mediaStream);
@@ -136,6 +140,14 @@ const VideoCallInterface = () => {
       setPeerCameraOff(false);
     });
 
+    socket.on("receiveMessage", ({ username, message, timestamp }) => {
+      setMessages((prev) => [
+        ...prev,
+        { username, message, timestamp: new Date(timestamp) },
+      ]);
+    });
+
+
     return () => {
       socket.off("user-joined");
       socket.off("answer");
@@ -143,6 +155,9 @@ const VideoCallInterface = () => {
       socket.off("offer");
       socket.off("camera-off");
       socket.off("camera-on");
+      socket.off("receiveMessage");
+
+
     };
   }, [roomID]);
 
@@ -159,12 +174,13 @@ const VideoCallInterface = () => {
     }
   }, [cameraOn, roomID]);
 
+  // Start call function
   const startCall = async () => {
     if (!stream) {
       alert("Please turn on your camera first!");
       return;
     }
-    
+
     console.log("Starting call...");
     const peer = peerConnectionRef.current;
     try {
@@ -178,10 +194,26 @@ const VideoCallInterface = () => {
     }
   };
 
+  // Handle sending messages
+  const sendMessage = () => {
+    console.log("Sending message...");  
+    if (newMessage.trim()) {
+      const messagePayload = {
+        roomID,
+        username: "You", // Replace with actual username if you have it
+        message: newMessage,
+        timestamp: new Date(),
+      };
+      socket.emit("sendMessage", messagePayload); // Emit to server
+      setMessages((prev) => [...prev, messagePayload]); // Update UI instantly
+      setNewMessage("");
+    }
+  };
+
   return (
     <div className="w-1/3 border-l border-gray-300 p-2 bg-white flex flex-col">
       <div className="flex-1 overflow-y-auto p-2">
-        
+
 
         {/* Local Video */}
         <div className="mb-4">
@@ -215,33 +247,56 @@ const VideoCallInterface = () => {
         </div>
       </div>
 
-<div className="p-2 border-t">
-  <p>chat messages will appear here</p>
+      <div className="p-2 border-t flex flex-col gap-2">
+        <div className="flex-1 max-h-40 overflow-y-auto bg-gray-100 p-2 rounded text-sm">
+          {messages.map((msg, index) => (
+            <div key={index} className="mb-1">
+              <span className="font-semibold text-gray-700">{msg.username}:</span>{" "}
+              <span className="text-gray-900">{msg.message}</span>
+            </div>
+          ))}
+          {messages.length === 0 && (
+            <p className="text-gray-500 text-center">No messages yet</p>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            placeholder="Type a message..."
+            className="flex-1 px-3 py-1 rounded border"
+          />
+          <button
+            onClick={sendMessage}
+            className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Send
+          </button>
+        </div>
+      </div>
 
-  
-</div>
 
       {/* Controls */}
       <div className="p-2 border-t">
         <button
           onClick={() => setCameraOn((prev) => !prev)}
-          className={`w-full mb-2 px-4 py-2 rounded text-white ${
-            cameraOn 
-              ? "bg-red-600 hover:bg-red-700" 
-              : "bg-green-600 hover:bg-green-700"
-          }`}
+          className={`w-full mb-2 px-4 py-2 rounded text-white ${cameraOn
+            ? "bg-red-600 hover:bg-red-700"
+            : "bg-green-600 hover:bg-green-700"
+            }`}
         >
           {cameraOn ? "Turn Off Camera" : "Turn On Camera"}
         </button>
-        
+
         <button
           onClick={startCall}
           disabled={!stream || callStarted}
-          className={`w-full px-4 py-2 rounded text-white ${
-            !stream || callStarted
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
-          }`}
+          className={`w-full px-4 py-2 rounded text-white ${!stream || callStarted
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700"
+            }`}
         >
           {callStarted ? "Call Started" : "Start Call"}
         </button>
