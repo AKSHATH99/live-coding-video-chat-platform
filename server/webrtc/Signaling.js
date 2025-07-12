@@ -1,6 +1,5 @@
 function Signaling(io) {
     io.on("connection", socket => {
-        console.log("New socket connected:", socket.id);
 
         socket.on("joinRoom", room => {
             console.log(`${socket.id} joined room ${room}`);
