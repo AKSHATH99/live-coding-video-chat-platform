@@ -2,6 +2,7 @@
 const express = require("express");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
+const messagingServer = require("./message-server"); // Import the messaging server
 
 const app = express();
 const httpServer = createServer(app);
@@ -10,6 +11,9 @@ const io = new Server(httpServer, {
     origin: "*"
   }
 });
+
+// Initialize messaging server
+messagingServer(io);
 
 io.on("connection", (socket) => {
   console.log("New socket connected:", socket.id);
@@ -56,6 +60,8 @@ io.on("connection", (socket) => {
     socket.to(roomId).emit("codeChange", newCode);
   });
 
+
+    
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
   });
