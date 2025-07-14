@@ -1,21 +1,34 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, use } from "react";
 import { io } from "socket.io-client";
-
+import { Mic, Video, VideoOff, MicOff, FileCode2 } from "lucide-react"; // Assuming you have lucide-react installed for icons
 const socket = io("http://localhost:5000/");
 
 const VideoCallInterface = () => {
   const [stream, setStream] = useState(null);
   const [cameraOn, setCameraOn] = useState(false);
+  const [microphoneOn, setMicrophoneOn] = useState(false);
   const [roomID, setRoomID] = useState("");
   const [peerCameraOff, setPeerCameraOff] = useState(false);
   const [callStarted, setCallStarted] = useState(false);
   const [peerConnected, setPeerConnected] = useState(false);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-
+  const [username, setUsername] = useState("user123"); // Replace with actual username if you have it
+  const [joinedUser, setJoinedUser] = useState(null);
 
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
+
+  useEffect(() => {
+    const username = localStorage.getItem('userName');
+    if (username) {
+      setUsername(username);
+    }
+  }, [])
+
+  useEffect(() => {
+    console.log("Joined user:", joinedUser);
+  }, [joinedUser]);
 
   // Create a new RTCPeerConnection instance
   const peerConnectionRef = useRef(
@@ -39,6 +52,7 @@ const VideoCallInterface = () => {
         .getUserMedia({ video: true, audio: true })
         .then((mediaStream) => {
           setStream(mediaStream);
+
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = mediaStream;
           }
@@ -47,6 +61,13 @@ const VideoCallInterface = () => {
           mediaStream.getTracks().forEach((track) => {
             peerConnectionRef.current.addTrack(track, mediaStream);
           });
+
+          // Set mic based on state
+          const audioTracks = mediaStream.getAudioTracks();
+          audioTracks.forEach((track) => {
+            track.enabled = microphoneOn;
+          });
+
         })
         .catch((err) => console.error("getUserMedia failed", err));
     } else {
@@ -59,6 +80,15 @@ const VideoCallInterface = () => {
       }
     }
   }, [cameraOn]);
+
+  useEffect(() => {
+    if (stream) {
+      const audioTracks = stream.getAudioTracks();
+      audioTracks.forEach((track) => {
+        track.enabled = microphoneOn;
+      });
+    }
+  }, [microphoneOn, stream]);
 
   // WebRTC and Socket event handlers
   useEffect(() => {
@@ -92,8 +122,9 @@ const VideoCallInterface = () => {
     };
 
     // Socket event listeners
-    socket.on("user-joined", (userId) => {
-      console.log("User joined:", userId);
+    socket.on("user-joined", ({userId, username}) => {
+      console.log("User joined:", userId , username);
+      setJoinedUser(username);
     });
 
     socket.on("answer", async ({ answer, from }) => {
@@ -196,11 +227,11 @@ const VideoCallInterface = () => {
 
   // Handle sending messages
   const sendMessage = () => {
-    console.log("Sending message...");  
+    console.log("Sending message...");
     if (newMessage.trim()) {
       const messagePayload = {
         roomID,
-        username: "You", // Replace with actual username if you have it
+        username: username, // Replace with actual username if you have it
         message: newMessage,
         timestamp: new Date(),
       };
@@ -225,12 +256,31 @@ const VideoCallInterface = () => {
             playsInline
             className="w-full h-48 bg-black rounded"
           />
+          <div className="flex items-center gap-3 mt-2">
+            <button
+              onClick={() => setCameraOn((prev) => !prev)}
+              className={`border-2 my-4 rounded p-3 text-sm flex items-center gap-2 `}
+
+            >
+              {cameraOn ? <Video color="green" /> : <VideoOff color="red" />}
+            </button>
+            <button
+              onClick={() => setMicrophoneOn((prev) => !prev)}
+              className={`border-2 my-4 rounded p-3 text-sm flex items-center gap-2 `}
+            >
+              {microphoneOn ? <Mic color="green" /> : <MicOff color="red" />}
+            </button>
+
+            <button className="border-2 my-4 rounded p-3 text-sm flex items-center gap-2">
+              <FileCode2 /> Share File
+            </button>
+          </div>
         </div>
 
         {/* Remote Video */}
         <div className="">
           <h3 className="text-sm font-semibold mb-2">
-            Remote Video {peerConnected && "(Connected)"}
+           {joinedUser ? `Peer Video (${joinedUser})` : "Peer Video"} {peerConnected && "(Connected)"}
           </h3>
           {peerCameraOff ? (
             <div className="w-full h-48 bg-gray-800 rounded flex items-center justify-center text-white">
@@ -280,7 +330,7 @@ const VideoCallInterface = () => {
 
       {/* Controls */}
       <div className="p-2 border-t">
-        <button
+        {/* <button
           onClick={() => setCameraOn((prev) => !prev)}
           className={`w-full mb-2 px-4 py-2 rounded text-white ${cameraOn
             ? "bg-red-600 hover:bg-red-700"
@@ -288,7 +338,7 @@ const VideoCallInterface = () => {
             }`}
         >
           {cameraOn ? "Turn Off Camera" : "Turn On Camera"}
-        </button>
+        </button> */}
 
         <button
           onClick={startCall}

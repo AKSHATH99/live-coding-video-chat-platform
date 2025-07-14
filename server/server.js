@@ -17,13 +17,13 @@ messagingServer(io);
 
 io.on("connection", (socket) => {
   console.log("New socket connected:", socket.id);
-  
-  socket.on("joinRoom", (roomId) => {
+
+  socket.on("joinRoom", (roomId , userName) => {
     socket.join(roomId);
     console.log(`Socket ${socket.id} joined room: ${roomId}`);
-    
+    console.log("---------------------------",userName)
     // Notify others in the room that a new user joined
-    socket.to(roomId).emit("user-joined", socket.id);
+     socket.to(roomId).emit("user-joined", { userId: socket.id, userName: userName });
   });
 
   // WebRTC Signaling

@@ -11,7 +11,7 @@ const RoomIDModal = ({ isOpen, onClose, userType, joinRoomID }) => {
   const handleJoinOrCreateRoom = () => {
     if (!roomID || !username) return;
     console.log(`Joining or creating room: ${roomID}`);
-    socket.emit('joinRoom', roomID);
+    socket.emit('joinRoom', roomID, username);
     localStorage.setItem('roomId', roomID);
     localStorage.setItem('userName', username);
     setCreatedRoom(true);
