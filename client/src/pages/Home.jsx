@@ -5,13 +5,17 @@ import socketIOClient from 'socket.io-client';
 import RoomIDModal from '../components/RoomIDModal';
 import VideoCallInterface from '../components/VideoCallInterface';
 import { useSearchParams } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from "lucide-react"; // optional icon lib
 
 const socket = socketIOClient('http://localhost:5000');
 
 function Home() {
     const [searchParams] = useSearchParams();
     const joinRoom = searchParams?.get('roomid');
+    const [sidebarOpen, setSidebarOpen] = useState(true);
 
+    const [files, setFiles] = useState([]); // Array of { filename, content }
+    const [activeFile, setActiveFile] = useState(null);
 
     const [roomID, setRoomID] = useState('');
     const [username, setUsername] = useState('');
@@ -35,7 +39,7 @@ function Home() {
         const userName = localStorage.getItem('userName');
         if (roomId) {
             setRoomID(roomId);
-            socket.emit("joinRoom", roomId , userName);  // <--- join the room on load
+            socket.emit("joinRoom", roomId, userName);  // <--- join the room on load
         }
         if (userName) {
             setUsername(userName);
@@ -67,31 +71,106 @@ function Home() {
 
 
     return (
-        <div className="h-screen flex flex-row">
+        <div className="h-screen flex flex-row overflow-hidden">
 
-            {/* LEFT SIDE - code editor */}
-            <div className="flex-1 p-2 bg-gray-100">
-                <div className="mb-2 flex items-center justify-between px-2">
-                    <div className="text-red-600 font-semibold text-sm">
-                        Room: {roomID || "No room"} | User: {username || ""}
+            {/* LEFT SIDEBAR */}
+            <div className={`transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-6'} bg-gray-200 relative`}>
+                {/* Toggle Button */}
+                <button
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    className="absolute -right-3 top-3 z-10 bg-gray-400 hover:bg-gray-500 text-white rounded-full p-1"
+                >
+                    {sidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+                </button>
+
+                {/* File Panel Content */}
+                {sidebarOpen && (
+  <div className="p-3 space-y-4">
+    <div className="text-gray-700 font-semibold text-sm">Files</div>
+    
+    {/* Input Box */}
+    <div className="flex gap-2 items-center">
+      <span className="text-lg font-bold">+</span>
+      <input
+        type="text"
+        placeholder="Enter filename (e.g. app.js)"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            const newFile = { filename: e.target.value, content: '' };
+            setFiles((prev) => [...prev, newFile]);
+            setActiveFile(newFile);
+            e.target.value = '';
+          }
+        }}
+        className="border p-2 rounded w-full"
+      />
+    </div>
+
+    {/* 🛠️ Moved this out to render below input */}
+    {files.length > 0 && (
+      <div className="flex flex-col gap-1 mt-3">
+        {files.map((file, idx) => (
+          <button
+            key={idx}
+            onClick={() => setActiveFile(file)}
+            className={`text-left px-3 py-1 rounded ${
+              activeFile?.filename === file.filename
+                ? 'bg-white border font-semibold'
+                : 'bg-gray-100 hover:bg-gray-200'
+            }`}
+          >
+            {file.filename}
+          </button>
+        ))}
+      </div>
+    )}
+  </div>
+)}
+
+            </div>
+
+            {/* CENTER - Editor */}
+            <div className="flex-1 flex flex-col bg-gray-100">
+                {/* Top bar */}
+                <div className="h-14 flex items-center justify-between px-6 bg-white border-b border-gray-300">
+                    <div className="flex items-center gap-4">
+                        <div className="text-gray-600 text-sm">
+                            Room: <span className="font-medium text-gray-900">{roomID || "No room"}</span>
+                        </div>
+                        <div className="text-gray-400">|</div>
+                        <div className="text-gray-600 text-sm">
+                            User: <span className="font-medium text-gray-900">{username || ""}</span>
+                        </div>
                     </div>
                     <button
                         onClick={() => setOpenModal(true)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white rounded px-3 py-1 text-xs shadow"
+                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 text-sm font-medium shadow-sm"
                     >
                         Change Room
                     </button>
                 </div>
-                <Editor
-                    height="calc(100vh - 40px)"  // accounting for top bar
-                    language="javascript"
-                    theme="vs-dark"
-                    value={code}
-                    onChange={handleChange}
-                />
+
+                {/* Code Editor */}
+                {activeFile && (
+                    <Editor
+                        height="400px"
+                        language="javascript"
+                        theme="vs-dark"
+                        value={activeFile.content}
+                        onChange={(value) => {
+                            setFiles((prevFiles) =>
+                                prevFiles.map((file) =>
+                                    file.filename === activeFile.filename
+                                        ? { ...file, content: value }
+                                        : file
+                                )
+                            );
+                        }}
+                    />
+                )}
             </div>
 
-            {/* RIGHT SIDE - reserved for video / chat */}
+            {/* RIGHT - Video Call Section */}
             <VideoCallInterface call={null} onEndCall={() => { }} />
 
             {/* Modal */}
@@ -107,13 +186,14 @@ function Home() {
                         if (roomId) {
                             socket.emit("joinRoom", roomId);
                         }
-                        
                     }}
                     userType={joinRoom ? "join" : "create"}
                     joinRoomID={joinRoom}
                 />
             )}
         </div>
+
+
     );
 
 
