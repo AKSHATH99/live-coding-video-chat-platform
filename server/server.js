@@ -18,12 +18,12 @@ messagingServer(io);
 io.on("connection", (socket) => {
   console.log("New socket connected:", socket.id);
 
-  socket.on("joinRoom", (roomId , userName) => {
+  socket.on("joinRoom", (roomId, userName) => {
     socket.join(roomId);
     console.log(`Socket ${socket.id} joined room: ${roomId}`);
-    console.log("---------------------------",userName)
+    console.log("---------------------------", userName)
     // Notify others in the room that a new user joined
-     socket.to(roomId).emit("user-joined", { userId: socket.id, userName: userName });
+    socket.to(roomId).emit("user-joined", { userId: socket.id, userName: userName });
   });
 
   // WebRTC Signaling
@@ -55,13 +55,18 @@ io.on("connection", (socket) => {
   });
 
   // Code changes for collaborative editing
-  socket.on("codeChange", ({ roomId, newCode }) => {
-    console.log(`Code change in room ${roomId} from ${socket.id}`);
-    socket.to(roomId).emit("codeChange", newCode);
+  socket.on("codeChange", ({ roomId, filename, content }) => {
+    console.log(`Code change in room ${roomId} | File: ${filename}`);
+    socket.to(roomId).emit("codeChange", { filename, content });
+  });
+  socket.on("newFile", ({ roomId, file }) => {
+    console.log(`New file in room ${roomId}: ${file.filename}`);
+    socket.to(roomId).emit("newFile", { file });
   });
 
 
-    
+
+
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
   });

@@ -22,6 +22,38 @@ function Home() {
     const [openModal, setOpenModal] = useState(false);
     const [code, setCode] = useState('// Write your code here...');
 
+    //create new file on load
+    useEffect(() => {
+        const newFile = { filename: "index", content: '' };
+        setFiles((prev) => [...prev, newFile]);
+        setActiveFile(newFile);
+    },[])
+
+    //Listener for code and file changes
+    useEffect(() => {
+        socket.on("newFile", ({ file }) => {
+            setFiles((prev) => {
+                const exists = prev.find(f => f.filename === file.filename);
+                return exists ? prev : [...prev, file];
+            });
+        });
+
+        socket.on("codeChange", ({ filename, content }) => {
+            setFiles((prevFiles) =>
+                prevFiles.map((file) =>
+                    file.filename === filename
+                        ? { ...file, content }
+                        : file
+                )
+            );
+        });
+
+        return () => {
+            socket.off("newFile");
+            socket.off("codeChange");
+        };
+    }, []);
+
     const handleChange = (value) => {
         setCode(value);
         console.log('Code changed:', value);
@@ -85,47 +117,47 @@ function Home() {
 
                 {/* File Panel Content */}
                 {sidebarOpen && (
-  <div className="p-3 space-y-4">
-    <div className="text-gray-700 font-semibold text-sm">Files</div>
-    
-    {/* Input Box */}
-    <div className="flex gap-2 items-center">
-      <span className="text-lg font-bold">+</span>
-      <input
-        type="text"
-        placeholder="Enter filename (e.g. app.js)"
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            const newFile = { filename: e.target.value, content: '' };
-            setFiles((prev) => [...prev, newFile]);
-            setActiveFile(newFile);
-            e.target.value = '';
-          }
-        }}
-        className="border p-2 rounded w-full"
-      />
-    </div>
+                    <div className="p-3 space-y-4">
+                        <div className="text-gray-700 font-semibold text-sm">Files</div>
 
-    {/* 🛠️ Moved this out to render below input */}
-    {files.length > 0 && (
-      <div className="flex flex-col gap-1 mt-3">
-        {files.map((file, idx) => (
-          <button
-            key={idx}
-            onClick={() => setActiveFile(file)}
-            className={`text-left px-3 py-1 rounded ${
-              activeFile?.filename === file.filename
-                ? 'bg-white border font-semibold'
-                : 'bg-gray-100 hover:bg-gray-200'
-            }`}
-          >
-            {file.filename}
-          </button>
-        ))}
-      </div>
-    )}
-  </div>
-)}
+                        {/* Input Box */}
+                        <div className="flex gap-2 items-center">
+                            <span className="text-lg font-bold">+</span>
+                            <input
+                                type="text"
+                                placeholder="Enter filename (e.g. app.js)"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        const newFile = { filename: e.target.value, content: '' };
+                                        setFiles((prev) => [...prev, newFile]);
+                                        setActiveFile(newFile);
+                                        e.target.value = '';
+                                        socket.emit("newFile", { roomId: roomID, file: newFile }); // ✅ emit to peer
+                                    }
+                                }}
+                                className="border p-2 rounded w-full"
+                            />
+                        </div>
+
+                        {/* 🛠️ Moved this out to render below input */}
+                        {files.length > 0 && (
+                            <div className="flex flex-col gap-1 mt-3">
+                                {files.map((file, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setActiveFile(file)}
+                                        className={`text-left px-3 py-1 rounded ${activeFile?.filename === file.filename
+                                            ? 'bg-white border font-semibold'
+                                            : 'bg-gray-100 hover:bg-gray-200'
+                                            }`}
+                                    >
+                                        {file.filename}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
 
             </div>
 
@@ -165,6 +197,12 @@ function Home() {
                                         : file
                                 )
                             );
+                            // Emit with filename + content
+                            socket.emit("codeChange", {
+                                roomId: roomID,
+                                filename: activeFile.filename,
+                                content: value
+                            });
                         }}
                     />
                 )}
