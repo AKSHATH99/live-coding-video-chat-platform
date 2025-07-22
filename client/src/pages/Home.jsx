@@ -1,16 +1,19 @@
 import React from 'react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Editor from '@monaco-editor/react'
 import socketIOClient from 'socket.io-client';
 import RoomIDModal from '../components/RoomIDModal';
 import VideoCallInterface from '../components/VideoCallInterface';
 import { useSearchParams } from 'react-router-dom';
+import { Upload } from "lucide-react";
+// / import handleFileUpload from '../lib/OpenFile';
 import {
     ChevronLeft,
     ClipboardCheck,
     ChevronRight,
     Plus,
     Save,
+    Moon,
     Copy,
     Settings,
     Users,
@@ -41,7 +44,30 @@ function Home() {
     const [copied, setCopied] = useState(false);
 
     const activeFileRef = React.useRef(activeFile);
+    const fileInputRef = useRef(null);
 
+    const handleFileUpload = (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            const content = e.target?.result;
+
+            const newFile = {
+                filename: file.name,
+                content,
+            };
+
+            setFiles((prev) => [...prev, newFile]);
+            setActiveFile(newFile);
+            socket.emit("newFile", { roomId: roomID, file: newFile });
+            setShowNewFileInput(false)
+        };
+
+        reader.readAsText(file);
+    };
 
     // Create new file on load
     useEffect(() => {
@@ -211,41 +237,62 @@ function Home() {
 
                         {/* New File Input */}
                         {showNewFileInput && (
-                            <div className="mb-4 p-3 bg-gray-50 rounded-lg border">
-                                <input
-                                    type="text"
-                                    value={newFileName}
-                                    onChange={(e) => setNewFileName(e.target.value)}
-                                    placeholder="filename.js"
-                                    className="w-full p-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            handleCreateFile();
-                                        } else if (e.key === 'Escape') {
-                                            setShowNewFileInput(false);
-                                            setNewFileName('');
-                                        }
-                                    }}
-                                    autoFocus
-                                />
-                                <div className="flex gap-2 mt-2">
+                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+                                <div className="w-full max-w-md bg-white rounded-xl p-6 shadow-lg">
+                                    <h2 className="text-lg font-medium text-gray-800 mb-4">Create or Import File</h2>
+
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleFileUpload}
+                                        style={{ display: "none" }}
+                                    />
+
                                     <button
-                                        onClick={handleCreateFile}
-                                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 mb-4"
                                     >
-                                        Create
+                                        <Upload size={16} />
+                                        Import from device
                                     </button>
-                                    <button
-                                        onClick={() => {
-                                            setShowNewFileInput(false);
-                                            setNewFileName('');
+
+                                    <input
+                                        type="text"
+                                        value={newFileName}
+                                        onChange={(e) => setNewFileName(e.target.value)}
+                                        placeholder="filename.js"
+                                        className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                handleCreateFile();
+                                            } else if (e.key === 'Escape') {
+                                                setShowNewFileInput(false);
+                                                setNewFileName('');
+                                            }
                                         }}
-                                        className="px-3 py-1 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400"
-                                    >
-                                        Cancel
-                                    </button>
+                                        autoFocus
+                                    />
+
+                                    <div className="flex justify-end gap-2 mt-4">
+                                        <button
+                                            onClick={handleCreateFile}
+                                            className="px-4 py-1.5 text-sm rounded-md bg-gray-800 text-white hover:bg-gray-700"
+                                        >
+                                            Create
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowNewFileInput(false);
+                                                setNewFileName('');
+                                            }}
+                                            className="px-4 py-1.5 text-sm rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
+
                         )}
 
                         {/* File List */}
@@ -370,6 +417,16 @@ function Home() {
                                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                                         >
                                             Change Room
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowDropdown(false);
+                                                // Handle editor settings logic here
+                                            }}
+                                            className="w-full flex gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                        >
+                                            <Moon height={16} width={16} />
+                                            Dark Mode
                                         </button>
                                         <button
                                             onClick={() => {
