@@ -18,6 +18,7 @@ import {
     File,
     ChevronDown
 } from "lucide-react";
+import downloadAllFilesAsZip from '../lib/DownloadZip';
 
 const socket = socketIOClient('http://localhost:5000');
 
@@ -52,6 +53,19 @@ function Home() {
     useEffect(() => {
         activeFileRef.current = activeFile;
     }, [activeFile]);
+
+    const downloadFile = (filename, content) => {
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+
+        URL.revokeObjectURL(url); // Clean up
+    };
+
 
 
     useEffect(() => {
@@ -310,17 +324,13 @@ function Home() {
                                 <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                                     <div className="py-1">
                                         <button
-                                            onClick={() => {
-                                                setShowSaveDropdown(false);
-                                            }}
+                                            onClick={() => downloadFile(activeFile.filename, activeFile.content)}
                                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                                         >
                                             Save This File
                                         </button>
                                         <button
-                                            onClick={() => {
-                                                setShowSaveDropdown(false);
-                                            }}
+                                            onClick={() => downloadAllFilesAsZip(files)}
                                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                                         >
                                             Save Entire Project
