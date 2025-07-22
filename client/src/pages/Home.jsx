@@ -7,6 +7,7 @@ import VideoCallInterface from '../components/VideoCallInterface';
 import { useSearchParams } from 'react-router-dom';
 import {
     ChevronLeft,
+    ClipboardCheck,
     ChevronRight,
     Plus,
     Save,
@@ -35,7 +36,11 @@ function Home() {
     const [roomID, setRoomID] = useState('');
     const [username, setUsername] = useState('');
     const [openModal, setOpenModal] = useState(false);
-    const [code, setCode] = useState('// Write your code here...');
+    // const [code, setCode] = useState('// Write your code here...');
+    const [copied, setCopied] = useState(false);
+
+    const activeFileRef = React.useRef(activeFile);
+
 
     // Create new file on load
     useEffect(() => {
@@ -43,6 +48,15 @@ function Home() {
         setFiles([newFile]);
         setActiveFile(newFile);
     }, []);
+
+    useEffect(() => {
+        activeFileRef.current = activeFile;
+    }, [activeFile]);
+
+
+    useEffect(() => {
+        console.log("Active file changed:", activeFile);
+    }, [activeFile]);
 
     // Listener for code and file changes
     useEffect(() => {
@@ -52,8 +66,9 @@ function Home() {
                 return exists ? prev : [...prev, file];
             });
         });
-
         socket.on("codeChange", ({ filename, content }) => {
+            console.log(`Code change received for file: ${filename}`);
+
             setFiles((prevFiles) =>
                 prevFiles.map((file) =>
                     file.filename === filename
@@ -61,7 +76,13 @@ function Home() {
                         : file
                 )
             );
+
+            // Use ref to ensure always-latest activeFile
+            if (activeFileRef.current?.filename === filename) {
+                setActiveFile((prev) => ({ ...prev, content }));
+            }
         });
+
 
         return () => {
             socket.off("newFile");
@@ -69,10 +90,38 @@ function Home() {
         };
     }, []);
 
-    const handleChange = (value) => {
-        setCode(value);
-        socket.emit('codeChange', { roomId: roomID, newCode: value });
+    // const handleChange = (value) => {
+    //     setCode(value);
+    //     socket.emit('codeChange', {
+    //         roomId: roomID,
+    //         filename: activeFile.filename,
+    //         content: value
+    //     });
+    // };
+
+    const copyCodeToClipboard = () => {
+        const content = activeFile?.content;
+        console.log("Copying content:", content);
+        if (!content) {
+            console.warn("No active file content to copy.");
+            return;
+        }
+
+        navigator.clipboard.writeText(content)
+            .then(() => {
+                console.log('Code copied to clipboard');
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            })
+            .catch(err => {
+                console.error('Failed to copy code: ', err);
+            });
     };
+
+
+    // useEffect(() => {
+    //     console.log("current code:", code);
+    // }, [code]);
 
     useEffect(() => {
         if (joinRoom) {
@@ -97,16 +146,6 @@ function Home() {
             socket.off('codeChange');
         };
     }, []);
-
-    useEffect(() => {
-        socket.on('codeChange', (newCode) => {
-            setCode(newCode);
-        });
-
-        return () => {
-            socket.off('codeChange');
-        };
-    }, [code]);
 
     const handleCreateFile = () => {
         if (newFileName.trim()) {
@@ -272,7 +311,6 @@ function Home() {
                                     <div className="py-1">
                                         <button
                                             onClick={() => {
-                                                // Save current file logic
                                                 setShowSaveDropdown(false);
                                             }}
                                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -281,7 +319,6 @@ function Home() {
                                         </button>
                                         <button
                                             onClick={() => {
-                                                // Save entire project logic
                                                 setShowSaveDropdown(false);
                                             }}
                                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -294,11 +331,11 @@ function Home() {
                         </div>
 
                         <button
-                            onClick={() => { }}
+                            onClick={() => { copyCodeToClipboard(); }}
                             className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors"
                         >
-                            <Copy size={16} />
-                            Copy
+                            {copied ? <ClipboardCheck size={16} /> : <Copy size={16} />}
+                            {copied ? "Copied!" : "Copy"}
                         </button>
 
                         {/* Settings Dropdown */}
@@ -331,7 +368,6 @@ function Home() {
                                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                                         >
                                             Editor Settings
-
                                         </button>
                                         <button
                                             onClick={() => {
@@ -363,24 +399,30 @@ function Home() {
                 <div className="flex-1">
                     {activeFile ? (
                         <Editor
+                            key={activeFile.filename} // 👈 force remount on file change
                             height="100%"
                             language="javascript"
                             theme="vs-dark"
                             value={activeFile.content}
                             onChange={(value) => {
-                                setFiles((prevFiles) =>
-                                    prevFiles.map((file) =>
-                                        file.filename === activeFile.filename
-                                            ? { ...file, content: value }
-                                            : file
-                                    )
+                                const updatedFiles = files.map((file) =>
+                                    file.filename === activeFile.filename
+                                        ? { ...file, content: value }
+                                        : file
                                 );
+                                setFiles(updatedFiles);
+
+                                // Update activeFile reference
+                                const updatedActive = updatedFiles.find(f => f.filename === activeFile.filename);
+                                setActiveFile(updatedActive);
+
                                 socket.emit("codeChange", {
                                     roomId: roomID,
                                     filename: activeFile.filename,
                                     content: value
                                 });
                             }}
+
                             options={{
                                 minimap: { enabled: false },
                                 fontSize: 14,

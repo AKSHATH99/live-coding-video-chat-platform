@@ -56,7 +56,7 @@ io.on("connection", (socket) => {
 
   // Code changes for collaborative editing
   socket.on("codeChange", ({ roomId, filename, content }) => {
-    console.log(`Code change in room ${roomId} | File: ${filename}`);
+    console.log(`Code change in room ${roomId} | File: ${filename} | content : ${content}`);
     socket.to(roomId).emit("codeChange", { filename, content });
   });
   socket.on("newFile", ({ roomId, file }) => {
