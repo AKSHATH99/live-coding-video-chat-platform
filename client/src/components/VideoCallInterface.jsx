@@ -122,8 +122,8 @@ const VideoCallInterface = () => {
     };
 
     // Socket event listeners
-    socket.on("user-joined", ({userId, username}) => {
-      console.log("User joined:", userId , username);
+    socket.on("user-joined", ({ userId, username }) => {
+      console.log("User joined:", userId, username);
       setJoinedUser(username);
     });
 
@@ -242,48 +242,45 @@ const VideoCallInterface = () => {
   };
 
   return (
-    <div className="w-1/3 border-l border-gray-300 p-2 bg-white flex flex-col">
-      <div className="flex-1 overflow-y-auto p-2">
+    <div className="w-1/3 border-l border-gray-200 bg-white flex flex-col text-sm">
 
+      {/* Video Section */}
+      <div className="p-4 space-y-6 flex-1 overflow-y-auto">
 
         {/* Local Video */}
-        <div className="mb-4">
-          <h3 className="text-sm font-semibold mb-2">Your Video</h3>
+        <div>
+          <h3 className="font-semibold text-gray-800 mb-2">Your Video</h3>
           <video
             ref={localVideoRef}
             autoPlay
             muted
             playsInline
-            className="w-full h-48 bg-black rounded"
+            className="w-full h-48 bg-black rounded-md"
           />
-          <div className="flex items-center gap-3 mt-2">
+          <div className="flex items-center justify-start gap-3 mt-3">
             <button
-              onClick={() => setCameraOn((prev) => !prev)}
-              className={`border-2 my-4 rounded p-3 text-sm flex items-center gap-2 `}
-
+              onClick={() => setCameraOn(prev => !prev)}
+              className="rounded-md border px-3 py-2 hover:bg-gray-100 flex items-center gap-1"
             >
-              {cameraOn ? <Video color="green" /> : <VideoOff color="red" />}
+              {cameraOn ? <Video color="green" size={18} /> : <VideoOff color="red" size={18} />}
             </button>
             <button
-              onClick={() => setMicrophoneOn((prev) => !prev)}
-              className={`border-2 my-4 rounded p-3 text-sm flex items-center gap-2 `}
+              onClick={() => setMicrophoneOn(prev => !prev)}
+              className="rounded-md border px-3 py-2 hover:bg-gray-100 flex items-center gap-1"
             >
-              {microphoneOn ? <Mic color="green" /> : <MicOff color="red" />}
-            </button>
-
-            <button className="border-2 my-4 rounded p-3 text-sm flex items-center gap-2">
-              <FileCode2 /> Share File
+              {microphoneOn ? <Mic color="green" size={18} /> : <MicOff color="red" size={18} />}
             </button>
           </div>
         </div>
 
-        {/* Remote Video */}
-        <div className="">
-          <h3 className="text-sm font-semibold mb-2">
-           {joinedUser ? `Peer Video (${joinedUser})` : "Peer Video"} {peerConnected && "(Connected)"}
+        {/* Peer Video */}
+        <div>
+          <h3 className="font-semibold text-gray-800 mb-2">
+            {joinedUser ? `Peer Video (${joinedUser})` : "Peer Video"}{" "}
+            {peerConnected && <span className="text-xs text-green-600">(Connected)</span>}
           </h3>
           {peerCameraOff ? (
-            <div className="w-full h-48 bg-gray-800 rounded flex items-center justify-center text-white">
+            <div className="w-full h-48 bg-gray-800 text-white flex items-center justify-center rounded-md">
               Your friend turned off their video
             </div>
           ) : (
@@ -291,24 +288,27 @@ const VideoCallInterface = () => {
               ref={remoteVideoRef}
               autoPlay
               playsInline
-              className="w-full h-48 bg-black rounded"
+              className="w-full h-48 bg-black rounded-md"
             />
           )}
         </div>
       </div>
 
-      <div className="p-2 border-t flex flex-col gap-2">
-        <div className="flex-1 max-h-40 overflow-y-auto bg-gray-100 p-2 rounded text-sm">
-          {messages.map((msg, index) => (
-            <div key={index} className="mb-1">
-              <span className="font-semibold text-gray-700">{msg.username}:</span>{" "}
-              <span className="text-gray-900">{msg.message}</span>
-            </div>
-          ))}
-          {messages.length === 0 && (
+      {/* Chat Section */}
+      <div className="border-t px-4 py-3 space-y-3 max-h-[200px]">
+        <div className="overflow-y-auto max-h-32 bg-gray-100 rounded p-2 text-sm">
+          {messages.length === 0 ? (
             <p className="text-gray-500 text-center">No messages yet</p>
+          ) : (
+            messages.map((msg, index) => (
+              <div key={index} className="mb-1">
+                <span className="font-semibold text-gray-700">{msg.username}:</span>{" "}
+                <span className="text-gray-800">{msg.message}</span>
+              </div>
+            ))
           )}
         </div>
+
         <div className="flex gap-2">
           <input
             type="text"
@@ -316,42 +316,32 @@ const VideoCallInterface = () => {
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             placeholder="Type a message..."
-            className="flex-1 px-3 py-1 rounded border"
+            className="flex-1 px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-400"
           />
           <button
             onClick={sendMessage}
-            className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700"
           >
             Send
           </button>
         </div>
       </div>
 
-
-      {/* Controls */}
-      <div className="p-2 border-t">
-        {/* <button
-          onClick={() => setCameraOn((prev) => !prev)}
-          className={`w-full mb-2 px-4 py-2 rounded text-white ${cameraOn
-            ? "bg-red-600 hover:bg-red-700"
-            : "bg-green-600 hover:bg-green-700"
-            }`}
-        >
-          {cameraOn ? "Turn Off Camera" : "Turn On Camera"}
-        </button> */}
-
+      {/* Call Controls */}
+      <div className="border-t px-4 py-3">
         <button
           onClick={startCall}
           disabled={!stream || callStarted}
-          className={`w-full px-4 py-2 rounded text-white ${!stream || callStarted
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-blue-600 hover:bg-blue-700"
+          className={`w-full py-2 rounded text-white transition ${!stream || callStarted
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-gray-800 hover:bg-gray-700"
             }`}
         >
           {callStarted ? "Call Started" : "Start Call"}
         </button>
       </div>
     </div>
+
   );
 };
 
