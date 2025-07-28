@@ -13,6 +13,7 @@ import {
     ClipboardCheck,
     ChevronRight,
     Plus,
+    Terminal,
     Save,
     Moon,
     Copy,
@@ -35,6 +36,9 @@ function Home() {
     const [newFileName, setNewFileName] = useState('');
     const [showNewFileInput, setShowNewFileInput] = useState(false);
     const [openFileSelectModal, setOpenFileSelectModal] = useState(false);
+    const [output, setOutput] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [showOutput, setShowOutput] = useState(false);
 
     const [files, setFiles] = useState([]);
     const [activeFile, setActiveFile] = useState(null);
@@ -47,6 +51,7 @@ function Home() {
 
     const activeFileRef = React.useRef(activeFile);
     const fileInputRef = useRef(null);
+    const editorRef = useRef(null);
 
     const handleFileUpload = (event) => {
         const file = event.target.files?.[0];
@@ -99,6 +104,62 @@ function Home() {
         URL.revokeObjectURL(url); // Clean up
     };
 
+    //Shortcut to run code
+    const handleEditorDidMount = (editor, monaco) => {
+        console.log("=== Monaco Editor Setup ===");
+        editorRef.current = editor;
+
+
+        editor.addAction({
+            id: 'run-code-backtick',
+            label: 'Run Code (Ctrl+`)',
+            keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Backquote],
+            run: () => {
+                console.log("🚀 Ctrl+` triggered!");
+                runCode();
+            }
+        });
+
+    };
+
+
+    const runCode = async () => {
+        try {
+            const response = await fetch(
+                "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-RapidAPI-Key": "0ba65e19b3mshfaf709a2d627ceep1acc0cjsn2b652c3bac6c", // ❗DON'T expose this in production
+                        "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com",
+                    },
+                    body: JSON.stringify({
+                        language_id: 71, // Python 3
+                        source_code: activeFile.content,
+                        stdin: "",
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json(); // ✅ await the JSON parsing
+            setShowOutput(true);
+            setLoading(false);
+            console.log("Code run successfully:", result);
+            setOutput(result.stdout || result.stderr || "No output");
+
+        } catch (err) {
+            setOutput("Error running code");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
 
     useEffect(() => {
@@ -137,14 +198,7 @@ function Home() {
         };
     }, []);
 
-    // const handleChange = (value) => {
-    //     setCode(value);
-    //     socket.emit('codeChange', {
-    //         roomId: roomID,
-    //         filename: activeFile.filename,
-    //         content: value
-    //     });
-    // };
+
 
     const copyCodeToClipboard = () => {
         const content = activeFile?.content;
@@ -166,9 +220,23 @@ function Home() {
     };
 
 
-    // useEffect(() => {
-    //     console.log("current code:", code);
-    // }, [code]);
+    useEffect(() => {
+        const handleGlobalKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === '`') {
+                const isInInput = ['INPUT', 'TEXTAREA'].includes(e.target.tagName) ||
+                    e.target.contentEditable === 'true';
+
+                if (!isInInput) {
+                    console.log("Global Ctrl+` triggered!");
+                    e.preventDefault();
+                    runCode();
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleGlobalKeyDown);
+        return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+    }, [activeFile]);
 
     useEffect(() => {
         if (joinRoom) {
@@ -364,6 +432,11 @@ function Home() {
                     {/* Right Section - Actions */}
                     <div className="flex items-center gap-3">
                         {/* Save Dropdown */}
+
+                        <button onClick={() => runCode()} className='flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors'>
+                            <Terminal size={16} />
+                            Run Code
+                        </button>
                         <div className="relative">
                             <button
                                 onClick={() => setShowSaveDropdown(!showSaveDropdown)}
@@ -481,9 +554,11 @@ function Home() {
                         <Editor
                             key={activeFile.filename} // 👈 force remount on file change
                             height="100%"
+                            ref={editorRef}
                             language="javascript"
                             theme="vs-dark"
                             value={activeFile.content}
+                            onMount={handleEditorDidMount}
                             onChange={(value) => {
                                 const updatedFiles = files.map((file) =>
                                     file.filename === activeFile.filename
@@ -520,6 +595,25 @@ function Home() {
                         </div>
                     )}
                 </div>
+
+                {showOutput && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                        <div className="bg-white w-full max-w-md p-6 rounded-lg shadow-lg relative">
+                            <h2 className="text-lg font-semibold text-gray-800 mb-4">Output</h2>
+
+                            <pre className="bg-gray-100 p-3 rounded-md text-sm text-gray-900 whitespace-pre-wrap break-words max-h-64 overflow-auto">
+                                {loading ? "Running..." : output || "No output"}
+                            </pre>
+
+                            <button
+                                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                                onClick={() => setShowOutput(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* RIGHT - Video Call Section */}
