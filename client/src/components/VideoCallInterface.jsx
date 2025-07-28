@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, use } from "react";
 import { io } from "socket.io-client";
-import { Mic, Video, VideoOff, MicOff, FileCode2 } from "lucide-react"; // Assuming you have lucide-react installed for icons
+import { Mic, Video, VideoOff, MicOff, FileCode2, Users } from "lucide-react"; // Assuming you have lucide-react installed for icons
 const socket = io("http://localhost:5000/");
 
 const VideoCallInterface = () => {
@@ -247,6 +247,16 @@ const VideoCallInterface = () => {
       {/* Video Section */}
       <div className="p-4 space-y-6 flex-1 overflow-y-auto">
 
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Users size={16} />
+                            <span className="font-medium text-gray-900">Room : {roomID || "No room"}</span>
+                        </div>
+                        {/* <div className="w-px h-4 bg-gray-300"></div>
+                        <div className="text-sm text-gray-600">
+                            <span className="font-medium text-gray-900">{username || "Anonymous"}</span>
+                        </div> */}
+                    </div>
         {/* Local Video */}
         <div>
           <h3 className="font-semibold text-gray-800 mb-2">Your Video</h3>

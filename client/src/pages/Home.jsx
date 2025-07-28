@@ -48,10 +48,13 @@ function Home() {
     const [openModal, setOpenModal] = useState(false);
     // const [code, setCode] = useState('// Write your code here...');
     const [copied, setCopied] = useState(false);
+    const [isCodeRunnable, setIsCodeRunnable] = useState(false);
+
 
     const activeFileRef = React.useRef(activeFile);
     const fileInputRef = useRef(null);
     const editorRef = useRef(null);
+
 
     const handleFileUpload = (event) => {
         const file = event.target.files?.[0];
@@ -140,8 +143,8 @@ function Home() {
 
     const runCode = async () => {
         try {
-             const currentContent = editorRef.current?.getValue()
-             console.log("from reference:", currentContent);
+            const currentContent = editorRef.current?.getValue()
+            console.log("from reference:", currentContent);
             console.log("Running code for file:", activeFile?.filename);
             console.log("Code content:", activeFile?.content);
             const response = await fetch(
@@ -302,7 +305,7 @@ function Home() {
     return (
         <div className="h-screen flex flex-row overflow-hidden bg-gray-50">
             {/* LEFT SIDEBAR */}
-            <div className={`transition-all duration-300 ${sidebarOpen ? 'w-72' : 'w-12'} bg-white border-r border-gray-200 shadow-sm relative`}>
+            <div className={`transition-all duration-300 flex-shrink-0 ${sidebarOpen ? 'w-44' : 'w-12'} bg-white border-r border-gray-200 shadow-sm relative`}>
                 {/* Toggle Button */}
                 <button
                     onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -313,7 +316,7 @@ function Home() {
 
                 {/* File Panel Content */}
                 {sidebarOpen && (
-                    <div className="p-4 h-full flex flex-col">
+                    <div className="p-4 h-full flex flex-col max-w-full overflow-hidden">
                         {/* Header */}
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
@@ -386,23 +389,22 @@ function Home() {
                                     </div>
                                 </div>
                             </div>
-
                         )}
 
                         {/* File List */}
-                        <div className="flex-1 overflow-y-auto">
+                        <div className="flex-1 overflow-y-auto overflow-hidden">
                             {files.length > 0 ? (
                                 <div className="space-y-1">
                                     {files.map((file, idx) => (
                                         <div
                                             key={idx}
-                                            className={`group flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${activeFile?.filename === file.filename
+                                            className={`group flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors min-w-0 ${activeFile?.filename === file.filename
                                                 ? 'bg-blue-50 border border-blue-200'
                                                 : 'hover:bg-gray-50'
                                                 }`}
                                             onClick={() => setActiveFile(file)}
                                         >
-                                            <span className={`text-sm truncate ${activeFile?.filename === file.filename
+                                            <span className={`text-sm truncate min-w-0 flex-1 ${activeFile?.filename === file.filename
                                                 ? 'text-blue-800 font-medium'
                                                 : 'text-gray-700'
                                                 }`}>
@@ -414,7 +416,7 @@ function Home() {
                                                         e.stopPropagation();
                                                         handleDeleteFile(file);
                                                     }}
-                                                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded text-red-600"
+                                                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded text-red-600 flex-shrink-0 ml-2"
                                                 >
                                                     <X size={12} />
                                                 </button>
@@ -437,7 +439,7 @@ function Home() {
                 {/* Top Navigation Bar */}
                 <div className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6">
                     {/* Left Section - Room Info */}
-                    <div className="flex items-center gap-4">
+                    {/* <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                             <Users size={16} />
                             <span className="font-medium text-gray-900">{roomID || "No room"}</span>
@@ -446,7 +448,7 @@ function Home() {
                         <div className="text-sm text-gray-600">
                             <span className="font-medium text-gray-900">{username || "Anonymous"}</span>
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* Right Section - Actions */}
                     <div className="flex items-center gap-3">
@@ -454,7 +456,11 @@ function Home() {
 
                         <button
                             onClick={() => runCode()}
-                            className='flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors'
+                            className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors ${isCodeRunnable
+                                    ? 'bg-gray-00 hover:bg-gray-200 text-gray-700'
+                                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                }`}
+                            disabled={!isCodeRunnable}
                         >
                             <Terminal size={16} />
                             <span>Run Code</span>
@@ -601,6 +607,11 @@ function Home() {
                                     filename: activeFile.filename,
                                     content: value
                                 });
+                                setIsCodeRunnable(
+                                    value &&
+                                    value.trim() !== '' &&
+                                    value.trim() !== '// Welcome to your collaborative editor!'
+                                );
                             }}
 
                             options={{
