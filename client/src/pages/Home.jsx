@@ -84,6 +84,21 @@ function Home() {
     }, []);
 
 
+    useEffect(() => {
+        const handleEscapeKey = (e) => {
+            if (e.key === 'Escape' && showOutput) {
+                setShowOutput(false);
+            }
+        };
+        if (showOutput) {
+            document.addEventListener('keydown', handleEscapeKey);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscapeKey);
+        };
+    }, [showOutput]);
+
     const handleFileSelectFromModal = (file) => {
         downloadFile(file.filename, file.content);
     };
@@ -125,6 +140,10 @@ function Home() {
 
     const runCode = async () => {
         try {
+             const currentContent = editorRef.current?.getValue()
+             console.log("from reference:", currentContent);
+            console.log("Running code for file:", activeFile?.filename);
+            console.log("Code content:", activeFile?.content);
             const response = await fetch(
                 "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true",
                 {
@@ -136,7 +155,7 @@ function Home() {
                     },
                     body: JSON.stringify({
                         language_id: 71, // Python 3
-                        source_code: activeFile.content,
+                        source_code: currentContent,
                         stdin: "",
                     }),
                 }
@@ -433,9 +452,15 @@ function Home() {
                     <div className="flex items-center gap-3">
                         {/* Save Dropdown */}
 
-                        <button onClick={() => runCode()} className='flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors'>
+                        <button
+                            onClick={() => runCode()}
+                            className='flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors'
+                        >
                             <Terminal size={16} />
-                            Run Code
+                            <span>Run Code</span>
+                            <span className="ml-2 text-xs text-gray-500 font-mono bg-gray-50 px-1.5 py-0.5 rounded border">
+                                Ctrl + `
+                            </span>
                         </button>
                         <div className="relative">
                             <button
@@ -599,18 +624,23 @@ function Home() {
                 {showOutput && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                         <div className="bg-white w-full max-w-md p-6 rounded-lg shadow-lg relative">
-                            <h2 className="text-lg font-semibold text-gray-800 mb-4">Output</h2>
-
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-semibold text-gray-800">Output</h2>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-400 font-mono bg-gray-50 px-1.5 py-0.5 rounded border">
+                                        Esc
+                                    </span>
+                                    <button
+                                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                                        onClick={() => setShowOutput(false)}
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                </div>
+                            </div>
                             <pre className="bg-gray-100 p-3 rounded-md text-sm text-gray-900 whitespace-pre-wrap break-words max-h-64 overflow-auto">
                                 {loading ? "Running..." : output || "No output"}
                             </pre>
-
-                            <button
-                                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-                                onClick={() => setShowOutput(false)}
-                            >
-                                ×
-                            </button>
                         </div>
                     </div>
                 )}
