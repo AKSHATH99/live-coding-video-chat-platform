@@ -6,7 +6,8 @@ import RoomIDModal from '../components/RoomIDModal';
 import VideoCallInterface from '../components/VideoCallInterface';
 import { useSearchParams } from 'react-router-dom';
 import { Upload } from "lucide-react";
-// / import handleFileUpload from '../lib/OpenFile';
+import FileSelectModal from '../components/FileSelectModal';
+
 import {
     ChevronLeft,
     ClipboardCheck,
@@ -33,6 +34,7 @@ function Home() {
     const [showSaveDropdown, setShowSaveDropdown] = useState(false);
     const [newFileName, setNewFileName] = useState('');
     const [showNewFileInput, setShowNewFileInput] = useState(false);
+    const [openFileSelectModal, setOpenFileSelectModal] = useState(false);
 
     const [files, setFiles] = useState([]);
     const [activeFile, setActiveFile] = useState(null);
@@ -75,6 +77,11 @@ function Home() {
         setFiles([newFile]);
         setActiveFile(newFile);
     }, []);
+
+
+    const handleFileSelectFromModal = (file) => {
+        downloadFile(file.filename, file.content);
+    };
 
     useEffect(() => {
         activeFileRef.current = activeFile;
@@ -376,8 +383,14 @@ function Home() {
                                         >
                                             Save This File
                                         </button>
-                                        <button
+                                        {/* <button
                                             onClick={() => downloadAllFilesAsZip(files)}
+                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                        >
+                                            Save Entire Project
+                                        </button> */}
+                                        <button
+                                            onClick={() => setOpenFileSelectModal(true)}
                                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                                         >
                                             Save Entire Project
@@ -541,6 +554,13 @@ function Home() {
                     }}
                 />
             )}
+            {openFileSelectModal && (
+                <FileSelectModal
+                    onClose={() => setOpenFileSelectModal(false)}
+                    files={files}
+                />
+            )}
+
         </div>
     );
 }
