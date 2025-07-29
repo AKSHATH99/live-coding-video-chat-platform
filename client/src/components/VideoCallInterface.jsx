@@ -241,16 +241,16 @@ const VideoCallInterface = () => {
     }
   };
 
-  return (
-    <div className="w-1/3 border-l border-gray-200 bg-white flex flex-col text-sm">
+return (
+    <div className="w-1/3 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col text-sm">
 
       {/* Video Section */}
       <div className="p-4 space-y-6 flex-1 overflow-y-auto">
 
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                             <Users size={16} />
-                            <span className="font-medium text-gray-900">Room : {roomID || "No room"}</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">Room : {roomID || "No room"}</span>
                         </div>
                         {/* <div className="w-px h-4 bg-gray-300"></div>
                         <div className="text-sm text-gray-600">
@@ -259,7 +259,7 @@ const VideoCallInterface = () => {
                     </div>
         {/* Local Video */}
         <div>
-          <h3 className="font-semibold text-gray-800 mb-2">Your Video</h3>
+          <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Your Video</h3>
           <video
             ref={localVideoRef}
             autoPlay
@@ -270,13 +270,13 @@ const VideoCallInterface = () => {
           <div className="flex items-center justify-start gap-3 mt-3">
             <button
               onClick={() => setCameraOn(prev => !prev)}
-              className="rounded-md border px-3 py-2 hover:bg-gray-100 flex items-center gap-1"
+              className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1"
             >
               {cameraOn ? <Video color="green" size={18} /> : <VideoOff color="red" size={18} />}
             </button>
             <button
               onClick={() => setMicrophoneOn(prev => !prev)}
-              className="rounded-md border px-3 py-2 hover:bg-gray-100 flex items-center gap-1"
+              className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1"
             >
               {microphoneOn ? <Mic color="green" size={18} /> : <MicOff color="red" size={18} />}
             </button>
@@ -285,12 +285,12 @@ const VideoCallInterface = () => {
 
         {/* Peer Video */}
         <div>
-          <h3 className="font-semibold text-gray-800 mb-2">
+          <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">
             {joinedUser ? `Peer Video (${joinedUser})` : "Peer Video"}{" "}
-            {peerConnected && <span className="text-xs text-green-600">(Connected)</span>}
+            {peerConnected && <span className="text-xs text-green-600 dark:text-green-400">(Connected)</span>}
           </h3>
           {peerCameraOff ? (
-            <div className="w-full h-48 bg-gray-800 text-white flex items-center justify-center rounded-md">
+            <div className="w-full h-48 bg-gray-800 dark:bg-gray-900 text-white flex items-center justify-center rounded-md">
               Your friend turned off their video
             </div>
           ) : (
@@ -305,15 +305,15 @@ const VideoCallInterface = () => {
       </div>
 
       {/* Chat Section */}
-      <div className="border-t px-4 py-3 space-y-3 max-h-[200px]">
-        <div className="overflow-y-auto max-h-32 bg-gray-100 rounded p-2 text-sm">
+      <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3 space-y-3 max-h-[200px]">
+        <div className="overflow-y-auto max-h-32 bg-gray-100 dark:bg-gray-700 rounded p-2 text-sm">
           {messages.length === 0 ? (
-            <p className="text-gray-500 text-center">No messages yet</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center">No messages yet</p>
           ) : (
             messages.map((msg, index) => (
               <div key={index} className="mb-1">
-                <span className="font-semibold text-gray-700">{msg.username}:</span>{" "}
-                <span className="text-gray-800">{msg.message}</span>
+                <span className="font-semibold text-gray-700 dark:text-gray-300">{msg.username}:</span>{" "}
+                <span className="text-gray-800 dark:text-gray-200">{msg.message}</span>
               </div>
             ))
           )}
@@ -326,11 +326,11 @@ const VideoCallInterface = () => {
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             placeholder="Type a message..."
-            className="flex-1 px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-400"
+            className="flex-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500"
           />
           <button
             onClick={sendMessage}
-            className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700"
+            className="bg-gray-800 dark:bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 dark:hover:bg-gray-500"
           >
             Send
           </button>
@@ -338,13 +338,13 @@ const VideoCallInterface = () => {
       </div>
 
       {/* Call Controls */}
-      <div className="border-t px-4 py-3">
+      <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3">
         <button
           onClick={startCall}
           disabled={!stream || callStarted}
           className={`w-full py-2 rounded text-white transition ${!stream || callStarted
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-gray-800 hover:bg-gray-700"
+              ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed"
+              : "bg-gray-800 dark:bg-gray-600 hover:bg-gray-700 dark:hover:bg-gray-500"
             }`}
         >
           {callStarted ? "Call Started" : "Start Call"}

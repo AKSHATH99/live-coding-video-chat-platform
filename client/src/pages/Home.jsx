@@ -8,7 +8,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Upload } from "lucide-react";
 import FileSelectModal from '../components/FileSelectModal';
 import TerminalOutput from '../components/OutputTerminal';
-
+import DarkModeToggle from '../components/ThemeToggler';
 import {
     ChevronLeft,
     ClipboardCheck,
@@ -309,13 +309,13 @@ function Home() {
     };
 
     return (
-        <div className="h-screen flex flex-row overflow-hidden bg-gray-50">
+        <div className="h-screen flex flex-row overflow-hidden bg-gray-50 dark:bg-black">
             {/* LEFT SIDEBAR */}
-            <div className={`transition-all duration-300 flex-shrink-0 ${sidebarOpen ? 'w-44' : 'w-12'} bg-white border-r border-gray-200 shadow-sm relative`}>
+            <div className={`transition-all duration-300 flex-shrink-0 ${sidebarOpen ? 'w-44' : 'w-12'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-sm relative`}>
                 {/* Toggle Button */}
                 <button
                     onClick={() => setSidebarOpen(!sidebarOpen)}
-                    className="absolute -right-3 top-6 z-10 bg-white hover:bg-gray-50 border border-gray-200 rounded-full p-1.5 shadow-sm"
+                    className="absolute -right-3 top-6 z-10 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full p-1.5 shadow-sm"
                 >
                     {sidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
                 </button>
@@ -325,13 +325,13 @@ function Home() {
                     <div className="p-4 h-full flex flex-col max-w-full overflow-hidden">
                         {/* Header */}
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                                 <File size={16} />
                                 Files
                             </h2>
                             <button
                                 onClick={() => setShowNewFileInput(true)}
-                                className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-800"
+                                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
                                 title="Create new file"
                             >
                                 <Plus size={16} />
@@ -341,8 +341,8 @@ function Home() {
                         {/* New File Input */}
                         {showNewFileInput && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-                                <div className="w-full max-w-md bg-white rounded-xl p-6 shadow-lg">
-                                    <h2 className="text-lg font-medium text-gray-800 mb-4">Create or Import File</h2>
+                                <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+                                    <h2 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">Create or Import File</h2>
 
                                     <input
                                         type="file"
@@ -353,7 +353,7 @@ function Home() {
 
                                     <button
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 mb-4"
+                                        className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 mb-4"
                                     >
                                         <Upload size={16} />
                                         Import from device
@@ -364,7 +364,7 @@ function Home() {
                                         value={newFileName}
                                         onChange={(e) => setNewFileName(e.target.value)}
                                         placeholder="filename.js"
-                                        className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+                                        className="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500"
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
                                                 handleCreateFile();
@@ -379,7 +379,7 @@ function Home() {
                                     <div className="flex justify-end gap-2 mt-4">
                                         <button
                                             onClick={handleCreateFile}
-                                            className="px-4 py-1.5 text-sm rounded-md bg-gray-800 text-white hover:bg-gray-700"
+                                            className="px-4 py-1.5 text-sm rounded-md bg-gray-800 dark:bg-gray-600 text-white hover:bg-gray-700 dark:hover:bg-gray-500"
                                         >
                                             Create
                                         </button>
@@ -388,7 +388,7 @@ function Home() {
                                                 setShowNewFileInput(false);
                                                 setNewFileName('');
                                             }}
-                                            className="px-4 py-1.5 text-sm rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                            className="px-4 py-1.5 text-sm rounded-md bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500"
                                         >
                                             Cancel
                                         </button>
@@ -405,14 +405,14 @@ function Home() {
                                         <div
                                             key={idx}
                                             className={`group flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors min-w-0 ${activeFile?.filename === file.filename
-                                                ? 'bg-blue-50 border border-blue-200'
-                                                : 'hover:bg-gray-50'
+                                                ? 'bg-blue-50 dark:bg-blue-900/50 border border-blue-200 dark:border-blue-700'
+                                                : 'hover:bg-gray-50 dark:hover:bg-gray-700'
                                                 }`}
                                             onClick={() => setActiveFile(file)}
                                         >
                                             <span className={`text-sm truncate min-w-0 flex-1 ${activeFile?.filename === file.filename
-                                                ? 'text-blue-800 font-medium'
-                                                : 'text-gray-700'
+                                                ? 'text-blue-800 dark:text-blue-300 font-medium'
+                                                : 'text-gray-700 dark:text-gray-300'
                                                 }`}>
                                                 {file.filename}
                                             </span>
@@ -422,7 +422,7 @@ function Home() {
                                                         e.stopPropagation();
                                                         handleDeleteFile(file);
                                                     }}
-                                                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded text-red-600 flex-shrink-0 ml-2"
+                                                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 dark:hover:bg-red-900/50 rounded text-red-600 dark:text-red-400 flex-shrink-0 ml-2"
                                                 >
                                                     <X size={12} />
                                                 </button>
@@ -431,7 +431,7 @@ function Home() {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-gray-500 text-sm text-center py-8">
+                                <div className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">
                                     No files yet. Create your first file!
                                 </div>
                             )}
@@ -443,7 +443,7 @@ function Home() {
             {/* CENTER - Editor */}
             <div className="flex-1 flex flex-col">
                 {/* Top Navigation Bar */}
-                <div className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+                <div className="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6">
                     {/* Left Section - Room Info */}
                     {/* <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -463,21 +463,21 @@ function Home() {
                         <button
                             onClick={() => runCode()}
                             className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors ${isCodeRunnable
-                                ? 'bg-gray-00 hover:bg-gray-200 text-gray-700'
-                                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                ? 'bg-gray-00 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
+                                : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                                 }`}
                             disabled={!isCodeRunnable}
                         >
                             <Terminal size={16} />
                             <span>Run Code</span>
-                            <span className="ml-2 text-xs text-gray-500 font-mono bg-gray-50 px-1.5 py-0.5 rounded border">
+                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400 font-mono bg-gray-50 dark:bg-gray-700 px-1.5 py-0.5 rounded border dark:border-gray-600">
                                 Ctrl + `
                             </span>
                         </button>
                         <div className="relative">
                             <button
                                 onClick={() => setShowSaveDropdown(!showSaveDropdown)}
-                                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors"
+                                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md transition-colors"
                             >
                                 <Save size={16} />
                                 Save
@@ -485,11 +485,11 @@ function Home() {
                             </button>
 
                             {showSaveDropdown && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
                                     <div className="py-1">
                                         <button
                                             onClick={() => downloadFile(activeFile.filename, activeFile.content)}
-                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                                         >
                                             Save This File
                                         </button>
@@ -501,7 +501,7 @@ function Home() {
                                         </button> */}
                                         <button
                                             onClick={() => setOpenFileSelectModal(true)}
-                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                                         >
                                             Save Entire Project
                                         </button>
@@ -512,7 +512,7 @@ function Home() {
 
                         <button
                             onClick={() => { copyCodeToClipboard(); }}
-                            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors"
+                            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md transition-colors"
                         >
                             {copied ? <ClipboardCheck size={16} /> : <Copy size={16} />}
                             {copied ? "Copied!" : "Copy"}
@@ -522,7 +522,7 @@ function Home() {
                         <div className="relative">
                             <button
                                 onClick={() => setShowDropdown(!showDropdown)}
-                                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-md transition-colors"
                             >
                                 <Settings size={16} />
                                 Settings
@@ -530,14 +530,14 @@ function Home() {
                             </button>
 
                             {showDropdown && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
                                     <div className="py-1">
                                         <button
                                             onClick={() => {
                                                 setOpenModal(true);
                                                 setShowDropdown(false);
                                             }}
-                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                                         >
                                             Change Room
                                         </button>
@@ -546,25 +546,24 @@ function Home() {
                                                 setShowDropdown(false);
                                                 // Handle editor settings logic here
                                             }}
-                                            className="w-full flex gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                            className="w-full flex gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                                         >
-                                            <Moon height={16} width={16} />
-                                            Dark Mode
+                                            <DarkModeToggle />
                                         </button>
-                                        <button
+                                        <div
                                             onClick={() => {
                                                 setShowDropdown(false);
                                             }}
-                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                                         >
                                             Editor Settings
-                                        </button>
+                                        </div>
                                         <button
                                             onClick={() => {
                                                 setOpenModal(true);
                                                 setShowDropdown(false);
                                             }}
-                                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
+                                            className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                                         >
                                             Leave Room
                                         </button>
@@ -577,10 +576,10 @@ function Home() {
 
                 {/* Active File Tab */}
                 {activeFile && (
-                    <div className="bg-gray-50 border-b border-gray-200 px-6 py-2">
+                    <div className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-2">
                         <div className="flex items-center gap-2">
-                            <File size={14} className="text-gray-500" />
-                            <span className="text-sm font-medium text-gray-700">{activeFile.filename}</span>
+                            <File size={14} className="text-gray-500 dark:text-gray-400" />
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{activeFile.filename}</span>
                         </div>
                     </div>
                 )}
@@ -628,9 +627,9 @@ function Home() {
                             }}
                         />
                     ) : (
-                        <div className="h-full flex items-center justify-center text-gray-500">
+                        <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900">
                             <div className="text-center">
-                                <File size={48} className="mx-auto mb-4 text-gray-300" />
+                                <File size={48} className="mx-auto mb-4 text-gray-300 dark:text-gray-600" />
                                 <p>No file selected</p>
                                 <p className="text-sm">Create or select a file to start coding</p>
                             </div>
@@ -648,22 +647,22 @@ function Home() {
 
                 {showOutput && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                        <div className="bg-white w-full max-w-md p-6 rounded-lg shadow-lg relative">
+                        <div className="bg-white dark:bg-gray-800 w-full max-w-md p-6 rounded-lg shadow-lg relative">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold text-gray-800">Output</h2>
+                                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Output</h2>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-400 font-mono bg-gray-50 px-1.5 py-0.5 rounded border">
+                                    <span className="text-xs text-gray-400 font-mono bg-gray-50 dark:bg-gray-700 px-1.5 py-0.5 rounded border dark:border-gray-600">
                                         Esc
                                     </span>
                                     <button
-                                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                                         onClick={() => setShowOutput(false)}
                                     >
                                         <X size={18} />
                                     </button>
                                 </div>
                             </div>
-                            <pre className="bg-gray-100 p-3 rounded-md text-sm text-gray-900 whitespace-pre-wrap break-words max-h-64 overflow-auto">
+                            <pre className="bg-gray-100 dark:bg-gray-700 p-3 rounded-md text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words max-h-64 overflow-auto">
                                 {loading ? "Running..." : output || "No output"}
                             </pre>
                         </div>
