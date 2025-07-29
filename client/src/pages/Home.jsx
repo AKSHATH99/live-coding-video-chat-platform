@@ -7,6 +7,7 @@ import VideoCallInterface from '../components/VideoCallInterface';
 import { useSearchParams } from 'react-router-dom';
 import { Upload } from "lucide-react";
 import FileSelectModal from '../components/FileSelectModal';
+import TerminalOutput from '../components/OutputTerminal';
 
 import {
     ChevronLeft,
@@ -39,6 +40,7 @@ function Home() {
     const [output, setOutput] = useState('');
     const [loading, setLoading] = useState(false);
     const [showOutput, setShowOutput] = useState(false);
+    const [showTerminal, setShowTerminal] = useState(false);
 
     const [files, setFiles] = useState([]);
     const [activeFile, setActiveFile] = useState(null);
@@ -89,7 +91,7 @@ function Home() {
 
     useEffect(() => {
         const handleEscapeKey = (e) => {
-            if (e.key === 'Escape' && showOutput) {
+            if (e.key === 'Escape' && showTerminal) {
                 setShowOutput(false);
             }
         };
@@ -139,10 +141,13 @@ function Home() {
         });
 
     };
-
+    const clearOutput = () => {
+        setOutput('');
+    };
 
     const runCode = async () => {
         try {
+
             const currentContent = editorRef.current?.getValue()
             console.log("from reference:", currentContent);
             console.log("Running code for file:", activeFile?.filename);
@@ -169,7 +174,8 @@ function Home() {
             }
 
             const result = await response.json(); // ✅ await the JSON parsing
-            setShowOutput(true);
+            setShowTerminal(true);
+            // setShowOutput(true);
             setLoading(false);
             console.log("Code run successfully:", result);
             setOutput(result.stdout || result.stderr || "No output");
@@ -457,8 +463,8 @@ function Home() {
                         <button
                             onClick={() => runCode()}
                             className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors ${isCodeRunnable
-                                    ? 'bg-gray-00 hover:bg-gray-200 text-gray-700'
-                                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                ? 'bg-gray-00 hover:bg-gray-200 text-gray-700'
+                                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                 }`}
                             disabled={!isCodeRunnable}
                         >
@@ -580,7 +586,7 @@ function Home() {
                 )}
 
                 {/* Code Editor */}
-                <div className="flex-1">
+                <div className={`${showTerminal ? 'flex-1' : 'flex-1'}`}>
                     {activeFile ? (
                         <Editor
                             key={activeFile.filename} // 👈 force remount on file change
@@ -631,6 +637,14 @@ function Home() {
                         </div>
                     )}
                 </div>
+                <TerminalOutput
+                    output={output}
+                    loading={loading}
+                    isVisible={showTerminal}
+                    onClose={() => setShowTerminal(false)}
+                    onClear={clearOutput}
+                    initialHeight={200}
+                />
 
                 {showOutput && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
