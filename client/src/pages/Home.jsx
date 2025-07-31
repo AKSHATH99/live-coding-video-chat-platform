@@ -9,6 +9,8 @@ import { Upload } from "lucide-react";
 import FileSelectModal from '../components/FileSelectModal';
 import TerminalOutput from '../components/OutputTerminal';
 import DarkModeToggle from '../components/ThemeToggler';
+import { getLanguageIdFromFilename } from '../constants/judge0-language';
+
 import {
     ChevronLeft,
     ClipboardCheck,
@@ -48,7 +50,6 @@ function Home() {
     const [roomID, setRoomID] = useState('');
     const [username, setUsername] = useState('');
     const [openModal, setOpenModal] = useState(false);
-    // const [code, setCode] = useState('// Write your code here...');
     const [copied, setCopied] = useState(false);
     const [isCodeRunnable, setIsCodeRunnable] = useState(false);
 
@@ -66,10 +67,11 @@ function Home() {
 
         reader.onload = (e) => {
             const content = e.target?.result;
-
+            const langID = getLanguageIdFromFilename(file.name);
             const newFile = {
                 filename: file.name,
                 content,
+                langID: langID
             };
 
             setFiles((prev) => [...prev, newFile]);
@@ -83,7 +85,8 @@ function Home() {
 
     // Create new file on load
     useEffect(() => {
-        const newFile = { filename: "index.js", content: '// Welcome to your collaborative editor!\n' };
+        const langID = getLanguageIdFromFilename("index.js");
+        const newFile = { filename: "index.js", content: '// Welcome to your collaborative editor!\n', langID: langID || 'javascript' };
         setFiles([newFile]);
         setActiveFile(newFile);
     }, []);
@@ -148,26 +151,23 @@ function Home() {
     const runCode = async () => {
         try {
 
+            if (!activeFile || !activeFile.langID) {
+                setOutput("Error: No active file or unsupported language");
+                setShowTerminal(true);
+                return;
+            }
+
             const currentContent = editorRef.current?.getValue()
             console.log("from reference:", currentContent);
             console.log("Running code for file:", activeFile?.filename);
             console.log("Code content:", activeFile?.content);
-            const response = await fetch(
-                "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-RapidAPI-Key": "0ba65e19b3mshfaf709a2d627ceep1acc0cjsn2b652c3bac6c", // ❗DON'T expose this in production
-                        "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com",
-                    },
-                    body: JSON.stringify({
-                        language_id: 71, // Python 3
-                        source_code: currentContent,
-                        stdin: "",
-                    }),
-                }
-            );
+            console.log("Language ID:", activeFile?.langID);
+            const response =
+                await fetch('http://localhost:5000/run-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ language_id: activeFile.langID, source_code: activeFile.content, stdin: "" }),
+                });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -292,7 +292,11 @@ function Home() {
 
     const handleCreateFile = () => {
         if (newFileName.trim()) {
-            const newFile = { filename: newFileName, content: '' };
+            const langID = getLanguageIdFromFilename(newFileName);
+            const newFile = { filename: newFileName, content: '', langID: langID || 'javascript' };
+            const langaugeExtension = newFileName.split('.').pop();
+            console.log("Creating new file:", newFileName, "with extension:", langaugeExtension);
+
             setFiles((prev) => [...prev, newFile]);
             setActiveFile(newFile);
             setNewFileName('');
@@ -462,11 +466,11 @@ function Home() {
 
                         <button
                             onClick={() => runCode()}
-                            className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors ${isCodeRunnable
+                            className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors ${isCodeRunnable && activeFile?.langID
                                 ? 'bg-gray-00 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
                                 : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                                 }`}
-                            disabled={!isCodeRunnable}
+                            disabled={!isCodeRunnable || !activeFile?.langID}
                         >
                             <Terminal size={16} />
                             <span>Run Code</span>

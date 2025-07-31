@@ -3,6 +3,8 @@ const express = require("express");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
 const messagingServer = require("./message-server"); // Import the messaging server
+const axios = require('axios');
+const cors = require("cors");
 
 const app = express();
 const httpServer = createServer(app);
@@ -11,7 +13,11 @@ const io = new Server(httpServer, {
     origin: "*"
   }
 });
-
+// app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173', // Your Vite dev server
+  credentials: true // If you need to send cookies/auth headers
+}));
 // Initialize messaging server
 messagingServer(io);
 
@@ -71,5 +77,60 @@ io.on("connection", (socket) => {
     console.log("Client disconnected:", socket.id);
   });
 });
+
+// Code run logic 
+// controllers/runCodeController.js
+
+const JUDGE0_URL = 'https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true';
+
+const runCode = async (req, res) => {
+  const { language_id, source_code, stdin = '' } = req.body;
+  console.log("Running code with language_id:", language_id, "stdin11s:", stdin);
+
+  
+  if (!language_id || !source_code) {
+    return res.status(400).json({ error: 'language_id and source_code are required' });
+  }
+
+  try {
+    const response = await axios.post(
+      JUDGE0_URL,
+      {
+        language_id,
+        source_code,
+        stdin,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RapidAPI-Key': '0ba65e19b3mshfaf709a2d627ceep1acc0cjsn2b652c3bac6c',
+          'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com',
+        },
+      }
+    );
+    console.log("Judge0 response:", response
+    );
+
+    return res.status(200).json(response.data);
+  } catch (error) {
+    console.error('Judge0 Error:', error?.response?.data || error.message);
+    return res.status(500).json({ error: 'Failed to run code', details: error?.response?.data });
+  }
+};
+
+module.exports = runCode;
+app.use(express.json()); 
+app.get("/", (req, res) => {
+  res.send("Welcome to the Socket.IO server!");
+});
+
+app.get("/health", (req, res) => {
+  res.status(200).send("Server is healthy");
+});
+
+
+app.post("/run-code", runCode);
+
+
 
 httpServer.listen(5000, () => console.log("Server running on port 5000"));
