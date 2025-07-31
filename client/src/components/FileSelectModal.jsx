@@ -38,8 +38,8 @@ const FileSelectModal = ({ onClose, files }) => {
                 onClick={onClose}
             ></div>
             <div className="relative z-10 w-full max-w-md mx-4">
-                <div className="bg-white rounded-xl border border-gray-200 shadow-2xl p-8 space-y-6 relative">
-                    <h2 className="text-lg font-semibold">Select Files to Download</h2>
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-2xl p-8 space-y-6 relative">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Select Files to Download</h2>
                     <ul className="space-y-2 max-h-64 overflow-y-auto">
                         {files.map((file, index) => (
                             <li key={index} className="flex items-center justify-between">
@@ -48,23 +48,23 @@ const FileSelectModal = ({ onClose, files }) => {
                                         type="checkbox"
                                         checked={selectedFiles.includes(file)}
                                         onChange={() => toggleFile(file)}
+                                        className="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:checked:bg-blue-600 dark:checked:border-blue-600"
                                     />
-                                    <span>{file.filename}</span>
+                                    <span className="text-gray-700 dark:text-gray-300">{file.filename}</span>
                                 </label>
                             </li>
                         ))}
                     </ul>
-
                     <div className="flex justify-end gap-2">
                         <button
                             onClick={handleDownloadSelected}
-                            className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                            className="px-4 py-1.5 text-sm bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-800"
                         >
                             Download Selected
                         </button>
                         <button
                             onClick={onClose}
-                            className="px-4 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                            className="px-4 py-1.5 text-sm bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500"
                         >
                             Cancel
                         </button>

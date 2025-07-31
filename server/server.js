@@ -85,9 +85,9 @@ const JUDGE0_URL = 'https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=
 
 const runCode = async (req, res) => {
   const { language_id, source_code, stdin = '' } = req.body;
-  console.log("Running code with language_id:", language_id, "stdin11s:", stdin);
+  console.log("Running code with language_id:", language_id, "stdin11s:", stdin, source_code);
 
-  
+
   if (!language_id || !source_code) {
     return res.status(400).json({ error: 'language_id and source_code are required' });
   }
@@ -119,7 +119,7 @@ const runCode = async (req, res) => {
 };
 
 module.exports = runCode;
-app.use(express.json()); 
+app.use(express.json());
 app.get("/", (req, res) => {
   res.send("Welcome to the Socket.IO server!");
 });

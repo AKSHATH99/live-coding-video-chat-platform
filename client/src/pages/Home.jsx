@@ -321,7 +321,7 @@ function Home() {
                     onClick={() => setSidebarOpen(!sidebarOpen)}
                     className="absolute -right-3 top-6 z-10 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full p-1.5 shadow-sm"
                 >
-                    {sidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+                    {sidebarOpen ? <ChevronLeft size={16} className='text-black dark:text-white' /> : <ChevronRight size={16} className='text-black dark:text-white' />}
                 </button>
 
                 {/* File Panel Content */}
@@ -467,7 +467,7 @@ function Home() {
                         <button
                             onClick={() => runCode()}
                             className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors ${isCodeRunnable && activeFile?.langID
-                                ? 'bg-gray-00 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
+                                ? 'bg-gray-00 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white dark:bg-gray-700'
                                 : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                                 }`}
                             disabled={!isCodeRunnable || !activeFile?.langID}
