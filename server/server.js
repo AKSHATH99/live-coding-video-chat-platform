@@ -65,6 +65,17 @@ io.on("connection", (socket) => {
     console.log(`Code change in room ${roomId} | File: ${filename} | content : ${content}`);
     socket.to(roomId).emit("codeChange", { filename, content });
   });
+  socket.on('codeDiff', ({ roomId, filename, patch, senderId }) => {
+    console.log(`codeDiff received from ${socket.id} for ${filename}`);
+    // Broadcast to everyone in the room EXCEPT the sender
+    socket.to(roomId).emit('codeDiff', { filename, patch });
+  });
+
+  socket.on('codeFullSync', ({ roomId, filename, content, senderId }) => {
+    console.log(`codeFullSync received from ${socket.id} for ${filename}`);
+    // Broadcast to everyone in the room EXCEPT the sender
+    socket.to(roomId).emit('codeFullSync', { filename, content });
+  });
   socket.on("newFile", ({ roomId, file }) => {
     console.log(`New file in room ${roomId}: ${file.filename}`);
     socket.to(roomId).emit("newFile", { file });

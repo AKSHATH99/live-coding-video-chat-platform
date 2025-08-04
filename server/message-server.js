@@ -13,6 +13,7 @@ module.exports = function messagingServer(io) {
     // Handle message sent to room
     socket.on('sendMessage', ({ roomID, message, username, timestamp }) => {
       console.log("got mesage in server")
+      console.log(`Message received: ${message} in room ${roomID} by ${username}`);
       if (!roomID || !message || !username) {
         console.warn('⚠️  Missing roomID, message, or username');
         return;
