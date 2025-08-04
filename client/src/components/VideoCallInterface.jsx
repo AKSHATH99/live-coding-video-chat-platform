@@ -39,7 +39,7 @@ const VideoCallInterface = () => {
 
   // For testing, set a default room ID
   useEffect(() => {
-    const storedRoom = localStorage.getItem("roomId") || "test-room";
+    const storedRoom = localStorage.getItem("roomId");
     setRoomID(storedRoom);
     socket.emit("joinRoom", storedRoom);
     console.log(`Joined room ${storedRoom}`);

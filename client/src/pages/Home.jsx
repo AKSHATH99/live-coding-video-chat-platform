@@ -10,6 +10,7 @@ import FileSelectModal from '../components/FileSelectModal';
 import TerminalOutput from '../components/OutputTerminal';
 import DarkModeToggle from '../components/ThemeToggler';
 import { getLanguageIdFromFilename } from '../constants/judge0-language';
+import throttle from 'lodash/throttle'
 
 import {
     ChevronLeft,
@@ -27,6 +28,11 @@ import {
     ChevronDown
 } from "lucide-react";
 import downloadAllFilesAsZip from '../lib/DownloadZip';
+import DiffMatchPatch from 'diff-match-patch';
+import { debounce } from 'lodash';
+
+// import { throttle } from 'lodash';
+
 
 const socket = socketIOClient('http://localhost:5000');
 
@@ -57,7 +63,79 @@ function Home() {
     const activeFileRef = React.useRef(activeFile);
     const fileInputRef = useRef(null);
     const editorRef = useRef(null);
+    const isReceivingRemoteChange = useRef(false);
 
+
+
+    // Add this useEffect to handle file switching
+    useEffect(() => {
+        if (activeFile && editorRef.current) {
+            const currentContent = editorRef.current.getValue();
+            if (currentContent !== activeFile.content) {
+                editorRef.current.setValue(activeFile.content || '');
+                lastSyncedContent.current = activeFile.content || '';
+            }
+        }
+    }, [activeFile?.filename]); // Only trigger when filename changes, not content
+    //throttling for code changes sync
+    const lastSyncedContent = useRef('');
+
+    useEffect(() => {
+        if (activeFile && activeFile.content != null) {
+            lastSyncedContent.current = activeFile.content;
+        }
+    }, [activeFile]);
+
+    useEffect(() => {
+        return () => {
+            // Cleanup throttled and debounced functions when component unmounts
+            throttledDifference.cancel();
+            debounceFlush.cancel();
+        };
+    }, []);
+
+    const dmp = new DiffMatchPatch();
+
+    const throttledDifference = throttle((newContent) => {
+        // Prevent sending if no active file or room
+        if (!activeFileRef.current?.filename || !roomID) return;
+
+        // Prevent sending if content hasn't actually changed
+        if (newContent === lastSyncedContent.current) return;
+
+        console.log("Throttled content sync for:", activeFileRef.current.filename);
+        const diff = dmp.patch_make(lastSyncedContent.current, newContent);
+        const patchText = dmp.patch_toText(diff);
+
+        // Only send if there are actual changes
+        if (patchText) {
+            socket.emit('codeDiff', {
+                roomId: roomID,
+                filename: activeFileRef.current.filename,
+                patch: patchText,
+                senderId: socket.id  // Add sender ID
+            });
+
+            lastSyncedContent.current = newContent;
+        }
+    }, 500);
+
+    const debounceFlush = debounce((newValue) => {
+        // Prevent sending if no active file or room
+        if (!activeFileRef.current?.filename || !roomID) return;
+
+        // Prevent sending if content hasn't actually changed
+        if (newValue === lastSyncedContent.current) return;
+
+        console.log("Flushing full content sync for:", activeFileRef.current.filename);
+        socket.emit('codeFullSync', {
+            roomId: roomID,
+            filename: activeFileRef.current.filename,
+            content: newValue,
+            senderId: socket.id  // Add sender ID
+        });
+        lastSyncedContent.current = newValue;
+    }, 3000);
 
     const handleFileUpload = (event) => {
         const file = event.target.files?.[0];
@@ -202,27 +280,91 @@ function Home() {
                 return exists ? prev : [...prev, file];
             });
         });
-        socket.on("codeChange", ({ filename, content }) => {
-            console.log(`Code change received for file: ${filename}`);
 
-            setFiles((prevFiles) =>
-                prevFiles.map((file) =>
-                    file.filename === filename
-                        ? { ...file, content }
-                        : file
-                )
-            );
+        socket.on('codeDiff', ({ filename, patch }) => {
+            console.log(`Code diff received for file: ${filename}`);
 
-            // Use ref to ensure always-latest activeFile
-            if (activeFileRef.current?.filename === filename) {
-                setActiveFile((prev) => ({ ...prev, content }));
+            // Only apply if it's for the currently active file
+            if (filename !== activeFileRef.current?.filename) return;
+
+            const currentContent = editorRef.current?.getValue();
+            const patches = dmp.patch_fromText(patch);
+            const [newContent, results] = dmp.patch_apply(patches, currentContent);
+
+            // Update editor content without triggering onChange
+            if (editorRef.current && newContent !== currentContent) {
+                console.log("Applying remote diff change");
+
+                // Set flag to prevent onChange from firing
+                isReceivingRemoteChange.current = true;
+
+                editorRef.current.setValue(newContent);
+
+                // Update files state to keep it in sync
+                setFiles((prevFiles) =>
+                    prevFiles.map((file) =>
+                        file.filename === filename
+                            ? { ...file, content: newContent }
+                            : file
+                    )
+                );
+
+                // Update activeFile
+                setActiveFile((prev) => ({ ...prev, content: newContent }));
+
+                // Update lastSyncedContent to prevent sending this change back
+                lastSyncedContent.current = newContent;
+
+                // Reset flag after a brief delay
+                setTimeout(() => {
+                    isReceivingRemoteChange.current = false;
+                }, 100);
             }
         });
 
+        socket.on('codeFullSync', ({ filename, content }) => {
+            console.log(`Full code sync received for file: ${filename}`);
+
+            // Only apply if it's for the currently active file
+            if (filename !== activeFileRef.current?.filename) return;
+
+            const currentContent = editorRef.current?.getValue();
+
+            // Update editor content without triggering onChange
+            if (editorRef.current && content !== currentContent) {
+                console.log("Applying remote full sync");
+
+                // Set flag to prevent onChange from firing
+                isReceivingRemoteChange.current = true;
+
+                editorRef.current.setValue(content);
+
+                // Update files state to keep it in sync
+                setFiles((prevFiles) =>
+                    prevFiles.map((file) =>
+                        file.filename === filename
+                            ? { ...file, content }
+                            : file
+                    )
+                );
+
+                // Update activeFile
+                setActiveFile((prev) => ({ ...prev, content }));
+
+                // Update lastSyncedContent to prevent sending this change back
+                lastSyncedContent.current = content;
+
+                // Reset flag after a brief delay
+                setTimeout(() => {
+                    isReceivingRemoteChange.current = false;
+                }, 100);
+            }
+        });
 
         return () => {
             socket.off("newFile");
-            socket.off("codeChange");
+            socket.off("codeDiff");
+            socket.off("codeFullSync");
         };
     }, []);
 
@@ -592,7 +734,7 @@ function Home() {
                 <div className={`${showTerminal ? 'flex-1' : 'flex-1'}`}>
                     {activeFile ? (
                         <Editor
-                            key={activeFile.filename} // 👈 force remount on file change
+                            // key={activeFile.filename} // 👈 force remount on file change
                             height="100%"
                             ref={editorRef}
                             language="javascript"
@@ -600,22 +742,36 @@ function Home() {
                             value={activeFile.content}
                             onMount={handleEditorDidMount}
                             onChange={(value) => {
-                                const updatedFiles = files.map((file) =>
-                                    file.filename === activeFile.filename
-                                        ? { ...file, content: value }
-                                        : file
+                                // Skip if this is a remote change being applied
+                                if (isReceivingRemoteChange.current) {
+                                    console.log("Skipping onChange - remote change");
+                                    return;
+                                }
+
+                                // Only update if content actually changed
+                                if (value === activeFile?.content) {
+                                    return;
+                                }
+
+                                console.log("Local change detected, updating state and syncing");
+
+                                // Update files state
+                                setFiles((prevFiles) =>
+                                    prevFiles.map((file) =>
+                                        file.filename === activeFile.filename
+                                            ? { ...file, content: value }
+                                            : file
+                                    )
                                 );
-                                setFiles(updatedFiles);
 
                                 // Update activeFile reference
-                                const updatedActive = updatedFiles.find(f => f.filename === activeFile.filename);
-                                setActiveFile(updatedActive);
+                                setActiveFile((prev) => ({ ...prev, content: value }));
 
-                                socket.emit("codeChange", {
-                                    roomId: roomID,
-                                    filename: activeFile.filename,
-                                    content: value
-                                });
+                                // Send changes to other users (throttled)
+                                throttledDifference(value);
+                                debounceFlush(value);
+
+                                // Update runnable state
                                 setIsCodeRunnable(
                                     value &&
                                     value.trim() !== '' &&
