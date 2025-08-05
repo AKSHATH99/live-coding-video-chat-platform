@@ -25,7 +25,8 @@ import {
     Users,
     X,
     File,
-    ChevronDown
+    ChevronDown,
+    Check
 } from "lucide-react";
 import downloadAllFilesAsZip from '../lib/DownloadZip';
 import DiffMatchPatch from 'diff-match-patch';
@@ -49,6 +50,7 @@ function Home() {
     const [loading, setLoading] = useState(false);
     const [showOutput, setShowOutput] = useState(false);
     const [showTerminal, setShowTerminal] = useState(false);
+    const [runforPeer, setRunforPeer] = useState(true);
 
     const [files, setFiles] = useState([]);
     const [activeFile, setActiveFile] = useState(null);
@@ -225,45 +227,88 @@ function Home() {
     const clearOutput = () => {
         setOutput('');
     };
-
-    const runCode = async () => {
+    const ensureFileExists = (filename, content) => {
+        setFiles(prevFiles => {
+            const existingFile = prevFiles.find(f => f.filename === filename);
+            if (existingFile) {
+                // Update existing file
+                return prevFiles.map(file =>
+                    file.filename === filename
+                        ? { ...file, content }
+                        : file
+                );
+            } else {
+                // Add new file if it doesn't exist
+                const langID = getLanguageIdFromFilename(filename);
+                const newFile = { filename, content, langID: langID || 'javascript' };
+                return [...prevFiles, newFile];
+            }
+        });
+    };
+    const runCodeForFile = async (file) => {
         try {
-
-            if (!activeFile || !activeFile.langID) {
-                setOutput("Error: No active file or unsupported language");
+            console.log("Running code for file:", file?.filename);
+            if (!file || !file.langID) {
+                setOutput("Error: No file provided or unsupported language");
                 setShowTerminal(true);
                 return;
             }
 
-            const currentContent = editorRef.current?.getValue()
-            console.log("from reference:", currentContent);
-            console.log("Running code for file:", activeFile?.filename);
-            console.log("Code content:", activeFile?.content);
-            console.log("Language ID:", activeFile?.langID);
-            const response =
-                await fetch('http://localhost:5000/run-code', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ language_id: activeFile.langID, source_code: activeFile.content, stdin: "" }),
-                });
+            console.log("Running code for file:", file.filename);
+            console.log("Code content:", file.content);
+            console.log("Language ID:", file.langID);
+
+            setLoading(true);
+
+            const response = await fetch('http://localhost:5000/run-code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    language_id: file.langID,
+                    source_code: file.content,
+                    stdin: ""
+                }),
+            });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const result = await response.json(); // ✅ await the JSON parsing
+            const result = await response.json();
             setShowTerminal(true);
-            // setShowOutput(true);
             setLoading(false);
             console.log("Code run successfully:", result);
             setOutput(result.stdout || result.stderr || "No output");
 
         } catch (err) {
-            setOutput("Error running code");
+            setOutput("Error running code: " + err.message);
             console.error(err);
-        } finally {
             setLoading(false);
         }
+    };
+    const runCode = async () => {
+        const currentContent = editorRef.current?.getValue();
+        const fileToRun = currentContent !== undefined
+            ? { ...activeFile, content: currentContent }
+            : activeFile;
+
+        if (!fileToRun) {
+            setOutput("Error: No active file");
+            setShowTerminal(true);
+            return;
+        }
+
+        // Emit to other users
+        if (runforPeer === true && roomID) {
+            socket.emit('runCode', {
+                roomId: roomID,
+                filename: fileToRun.filename,
+                content: fileToRun.content,
+            });
+        }
+
+        // Run locally
+        await runCodeForFile(fileToRun);
     };
 
 
@@ -279,6 +324,23 @@ function Home() {
                 const exists = prev.find(f => f.filename === file.filename);
                 return exists ? prev : [...prev, file];
             });
+        });
+
+        socket.on('runCode', ({ filename, content }) => {
+            console.log(`Run code received for file: ${filename}`);
+
+            // Ensure the file exists in local state
+            ensureFileExists(filename, content);
+
+            // Get the updated file
+            const fileToRun = {
+                filename,
+                content,
+                langID: getLanguageIdFromFilename(filename) || 'javascript'
+            };
+
+            // Run the code
+            runCodeForFile(fileToRun);
         });
 
         socket.on('codeDiff', ({ filename, patch }) => {
@@ -704,6 +766,9 @@ function Home() {
                                         >
                                             Editor Settings
                                         </div>
+                                        <button onClick={() => setRunforPeer(!runforPeer)} className='w-full flex gap-2 text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700'>
+                                           {runforPeer ? <Check size={16} /> : ""} Run for peer
+                                        </button>
                                         <button
                                             onClick={() => {
                                                 setOpenModal(true);

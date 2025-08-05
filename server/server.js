@@ -38,6 +38,11 @@ io.on("connection", (socket) => {
     socket.to(roomID).emit('offer', { offer, from: socket.id });
   });
 
+  socket.on('runCode', ({ roomId, filename, content }) => {
+    console.log(`Run code request in room ${roomId} for file ${filename}`);
+    socket.to(roomId).emit('runCode', { filename, content });
+  });
+
   socket.on('answer', ({ roomID, answer }) => {
     console.log(`Answer from ${socket.id} in room ${roomID}`);
     socket.to(roomID).emit('answer', { answer, from: socket.id });
