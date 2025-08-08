@@ -60,7 +60,9 @@ function Home() {
     const [openModal, setOpenModal] = useState(false);
     const [copied, setCopied] = useState(false);
     const [isCodeRunnable, setIsCodeRunnable] = useState(false);
-
+    const [startTimer, setStartTimer] = useState(false);
+    const [timer, setTimer] = useState(0);
+    const intervalRef = useRef(null);
 
     const activeFileRef = React.useRef(activeFile);
     const fileInputRef = useRef(null);
@@ -476,6 +478,9 @@ function Home() {
     useEffect(() => {
         if (joinRoom) {
             socket.emit("joinRoom", joinRoom);
+            intervalRef.current = setInterval(() => {
+                setTimer(prev => prev + 1);
+            }, 1000);
             setRoomID(joinRoom);
         }
 
@@ -484,6 +489,9 @@ function Home() {
         if (roomId) {
             setRoomID(roomId);
             socket.emit("joinRoom", roomId, userName);
+            intervalRef.current = setInterval(() => {
+                setTimer(prev => prev + 1);
+            }, 1000);
         }
         if (userName) {
             setUsername(userName);
@@ -494,8 +502,16 @@ function Home() {
 
         return () => {
             socket.off('codeChange');
+            clearInterval(intervalRef.current);
+
         };
     }, []);
+
+    const formatTime = (secs) => {
+        const mins = Math.floor(secs / 60).toString().padStart(2, "0");
+        const seconds = (secs % 60).toString().padStart(2, "0");
+        return `${mins}:${seconds}`;
+    };
 
     const handleCreateFile = () => {
         if (newFileName.trim()) {
@@ -785,6 +801,7 @@ function Home() {
                                 </div>
                             )}
                         </div>
+                         {formatTime(timer)}    
                     </div>
                 </div>
 
