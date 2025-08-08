@@ -344,6 +344,9 @@ function Home() {
         });
 
         socket.on('codeDiff', ({ filename, patch }) => {
+            if (isCodeRunnable === false) {
+                setIsCodeRunnable(true);
+            }
             console.log(`Code diff received for file: ${filename}`);
 
             // Only apply if it's for the currently active file
@@ -767,7 +770,7 @@ function Home() {
                                             Editor Settings
                                         </div>
                                         <button onClick={() => setRunforPeer(!runforPeer)} className='w-full flex gap-2 text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700'>
-                                           {runforPeer ? <Check size={16} /> : ""} Run for peer
+                                            {runforPeer ? <Check size={16} /> : ""} Run for peer
                                         </button>
                                         <button
                                             onClick={() => {
