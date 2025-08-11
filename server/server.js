@@ -5,6 +5,8 @@ const { Server } = require("socket.io");
 const messagingServer = require("./message-server"); // Import the messaging server
 const axios = require('axios');
 const cors = require("cors");
+const path = require('path');
+
 
 const app = express();
 const httpServer = createServer(app);
@@ -135,7 +137,7 @@ const runCode = async (req, res) => {
   }
 };
 
-module.exports = runCode;
+// module.exports = runCode;
 app.use(express.json());
 app.get("/", (req, res) => {
   res.send("Welcome to the Socket.IO server!");
@@ -147,9 +149,10 @@ app.get("/health", (req, res) => {
 
 
 // Handle SPA routing
-app.get('*', (req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
+
 
 
 app.post("/run-code", runCode);
