@@ -6,7 +6,7 @@ const SOCKET_SERVER_URL =
     ? window.location.origin // same origin as production
     : "http://localhost:5000"; // dev backend
 
-const socket = io(SOCKET_SERVER_URL, {
+const socket = socketIOClient(SOCKET_SERVER_URL, {
   withCredentials: true,
 });
 
