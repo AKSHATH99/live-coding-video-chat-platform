@@ -13,6 +13,7 @@ const io = new Server(httpServer, {
     origin: "*"
   }
 });
+app.use(express.static(path.join(__dirname, '../client/dist')));
 // app.use(cors());
 app.use(cors({
   origin: 'http://localhost:5173', // Your Vite dev server
@@ -142,6 +143,12 @@ app.get("/", (req, res) => {
 
 app.get("/health", (req, res) => {
   res.status(200).send("Server is healthy");
+});
+
+
+// Handle SPA routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
 
