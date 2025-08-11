@@ -16,6 +16,8 @@ const RoomIDModal = ({ isOpen, onClose, userType, joinRoomID }) => {
   const [username, setUsername] = useState('');
   const [createdRoom, setCreatedRoom] = useState(false);
 
+  const baseUrl = `${window.location.protocol}//${window.location.host}`;
+  
   const handleJoinOrCreateRoom = () => {
     if (!roomID || !username) return;
     console.log(`Joining or creating room: ${roomID}`);
@@ -25,7 +27,6 @@ const RoomIDModal = ({ isOpen, onClose, userType, joinRoomID }) => {
     setCreatedRoom(true);
     // onClose();
 
-    const baseUrl = `${window.location.protocol}//${window.location.host}`;
 
   };
   useEffect(() => {
