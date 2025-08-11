@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import socketIOClient from 'socket.io-client';
 
-const socket = socketIOClient('http://localhost:5000');
+const SOCKET_SERVER_URL =
+  import.meta.env.PROD
+    ? window.location.origin // same origin as production
+    : "http://localhost:5000"; // dev backend
+
+const socket = io(SOCKET_SERVER_URL, {
+  withCredentials: true,
+});
+
 
 const RoomIDModal = ({ isOpen, onClose, userType, joinRoomID }) => {
   const [roomID, setRoomID] = useState('');
@@ -16,6 +24,8 @@ const RoomIDModal = ({ isOpen, onClose, userType, joinRoomID }) => {
     localStorage.setItem('userName', username);
     setCreatedRoom(true);
     // onClose();
+
+    const baseUrl = `${window.location.protocol}//${window.location.host}`;
 
   };
   useEffect(() => {
@@ -82,12 +92,12 @@ const RoomIDModal = ({ isOpen, onClose, userType, joinRoomID }) => {
               Room {userType === "join" ? "Joined" : "Created"}
               <div className="flex items-center justify-between bg-gray-100 dark:bg-gray-700 p-2 rounded-lg mb-2">
                 <span className="text-sm truncate text-gray-800 dark:text-gray-200">
-                  http://localhost:5173/?roomid={roomID}
+                  `${baseUrl}/?roomid=${roomID}`
                 </span>
               </div>
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(`http://localhost:5173/?roomid=${roomID}`);
+                  navigator.clipboard.writeText(`${baseUrl}/?roomid=${roomID}`);
                   // Optional: Add feedback that URL was copied
                   const button = document.activeElement;
                   const originalText = button.textContent;

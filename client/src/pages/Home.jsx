@@ -35,7 +35,15 @@ import { debounce } from 'lodash';
 // import { throttle } from 'lodash';
 
 
-const socket = socketIOClient('http://localhost:5000');
+const SOCKET_SERVER_URL =
+    import.meta.env.PROD
+        ? window.location.origin // same origin as production
+        : "http://localhost:5000"; // dev backend
+
+const socket = io(SOCKET_SERVER_URL, {
+    withCredentials: true,
+});
+
 
 function Home() {
     const [searchParams] = useSearchParams();
@@ -262,7 +270,7 @@ function Home() {
 
             setLoading(true);
 
-            const response = await fetch('http://localhost:5000/run-code', {
+            const response = await fetch('/run-code', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -801,7 +809,7 @@ function Home() {
                                 </div>
                             )}
                         </div>
-                         {formatTime(timer)}    
+                        {formatTime(timer)}
                     </div>
                 </div>
 

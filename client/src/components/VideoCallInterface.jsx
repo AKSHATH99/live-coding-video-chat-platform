@@ -1,7 +1,15 @@
 import { useRef, useEffect, useState, use } from "react";
 import { io } from "socket.io-client";
 import { Mic, Video, VideoOff, MicOff, FileCode2, Users } from "lucide-react"; // Assuming you have lucide-react installed for icons
-const socket = io("http://localhost:5000/");
+const SOCKET_SERVER_URL =
+  import.meta.env.PROD
+    ? window.location.origin // same origin as production
+    : "http://localhost:5000/"; // dev backend
+
+const socket = io(SOCKET_SERVER_URL, {
+  withCredentials: true,
+});
+
 
 const VideoCallInterface = () => {
   const [stream, setStream] = useState(null);
