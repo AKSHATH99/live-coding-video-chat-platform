@@ -76,6 +76,8 @@ function Home() {
     const fileInputRef = useRef(null);
     const editorRef = useRef(null);
     const isReceivingRemoteChange = useRef(false);
+    const lastRanCodeRef = useRef('');
+    const lastRanOutputRef = useRef('');
 
 
 
@@ -270,7 +272,7 @@ function Home() {
 
             setLoading(true);
 
-            const response = await fetch('/run-code', {
+            const response = await fetch('http://localhost:5000/run-code', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -279,6 +281,7 @@ function Home() {
                     stdin: ""
                 }),
             });
+            console.log(response)
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -290,6 +293,8 @@ function Home() {
             console.log("Code run successfully:", result);
             setOutput(result.stdout || result.stderr || "No output");
 
+            return result.stdout || result.stderr || "No output";
+
         } catch (err) {
             setOutput("Error running code: " + err.message);
             console.error(err);
@@ -297,29 +302,39 @@ function Home() {
         }
     };
     const runCode = async () => {
-        const currentContent = editorRef.current?.getValue();
-        const fileToRun = currentContent !== undefined
-            ? { ...activeFile, content: currentContent }
-            : activeFile;
+        const currentContent = editorRef.current?.getValue() ?? '';
 
-        if (!fileToRun) {
+        if (!activeFile) {
             setOutput("Error: No active file");
             setShowTerminal(true);
             return;
         }
 
-        // Emit to other users
-        if (runforPeer === true && roomID) {
+        // skip API call if nothing changed
+        if (currentContent.trim() === (lastRanCodeRef.current?.trim() ?? '')) {
+            console.log("⚡ No changes, using cached output");
+            setOutput(lastRanOutputRef.current || "No output from last run");
+            setShowTerminal(true);
+            return;
+        }
+
+        // store updated code
+        lastRanCodeRef.current = currentContent;
+
+        // send to peers
+        if (runforPeer && roomID) {
             socket.emit('runCode', {
                 roomId: roomID,
-                filename: fileToRun.filename,
-                content: fileToRun.content,
+                filename: activeFile.filename,
+                content: currentContent,
             });
         }
 
-        // Run locally
-        await runCodeForFile(fileToRun);
+        // run it
+        const result = await runCodeForFile({ ...activeFile, content: currentContent });
+        lastRanOutputRef.current = result;
     };
+
 
 
 
