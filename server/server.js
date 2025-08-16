@@ -12,14 +12,17 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "*"
+    origin: "https://live-coding-video-chat-platform.onrender.com", // ✅ Must match frontend
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 app.use(express.static(path.join(__dirname, '../client/dist')));
 // app.use(cors());
+//  // Your Vite dev server
 app.use(cors({
-  origin: 'https://live-coding-video-chat-platform.onrender.com', // Your Vite dev server
-  credentials: true // If you need to send cookies/auth headers
+  origin: 'https://live-coding-video-chat-platform.onrender.com',
+  // credentials: true // If you need to send cookies/auth headers
 }));
 // Initialize messaging server
 messagingServer(io);
@@ -103,6 +106,7 @@ io.on("connection", (socket) => {
 const JUDGE0_URL = 'https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true';
 
 const runCode = async (req, res) => {
+  console.log("Received request to run code:");
   const { language_id, source_code, stdin = '' } = req.body;
   console.log("Running code with language_id:", language_id, "stdin11s:", stdin, source_code);
 
@@ -148,6 +152,8 @@ app.get("/health", (req, res) => {
 });
 
 
+app.post("/run-code", runCode);
+
 // Handle SPA routing
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, '../client/dist/index.html'));
@@ -155,7 +161,6 @@ app.use((req, res) => {
 
 
 
-app.post("/run-code", runCode);
 
 
 
