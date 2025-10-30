@@ -1,11 +1,11 @@
 function Signaling(io) {
     io.on("connection", socket => {
 
-        socket.on("joinRoom", room => {
+        socket.on("joinRoom", (room, userName) => {
             console.log(`${socket.id} joined room ${room}`);
             socket.join(room);
 
-            socket.to(room).emit("user-joined", socket.id);
+            socket.to(room).emit("user-joined", { userId: socket.id, userName: userName });
 
             socket.on('offer', ({ roomID, offer }) => {
                 console.log(`Offer from ${socket.id} in room ${roomID}`);

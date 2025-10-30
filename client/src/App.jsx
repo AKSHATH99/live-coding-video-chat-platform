@@ -33,7 +33,7 @@ function App() {
     const userName = localStorage.getItem('userName');
     if (roomId) {
       setRoomID(roomId);
-      socket.emit("joinRoom", roomId);  // <--- join the room on load
+      socket.emit("joinRoom", roomId , userName);  // <--- join the room on load
     }
     if (userName) {
       setUsername(userName);

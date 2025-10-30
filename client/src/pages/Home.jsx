@@ -500,7 +500,8 @@ function Home() {
 
     useEffect(() => {
         if (joinRoom) {
-            socket.emit("joinRoom", joinRoom);
+            const userName = localStorage.getItem('userName');
+            socket.emit("joinRoom", joinRoom, userName);
             intervalRef.current = setInterval(() => {
                 setTimer(prev => prev + 1);
             }, 1000);
@@ -561,27 +562,27 @@ function Home() {
     return (
         <div className="h-screen flex flex-row overflow-hidden bg-gray-50 dark:bg-black">
             {/* LEFT SIDEBAR */}
-            <div className={`transition-all duration-300 flex-shrink-0 ${sidebarOpen ? 'w-44' : 'w-12'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-sm relative`}>
+            <div className={`transition-all duration-300 flex-shrink-0 ${sidebarOpen ? 'w-48' : 'w-14'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-sm relative`}>
                 {/* Toggle Button */}
                 <button
                     onClick={() => setSidebarOpen(!sidebarOpen)}
-                    className="absolute -right-3 top-6 z-10 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full p-1.5 shadow-sm"
+                    className="absolute -right-3 top-8 z-10 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full p-2 shadow-sm"
                 >
                     {sidebarOpen ? <ChevronLeft size={16} className='text-black dark:text-white' /> : <ChevronRight size={16} className='text-black dark:text-white' />}
                 </button>
 
                 {/* File Panel Content */}
                 {sidebarOpen && (
-                    <div className="p-4 h-full flex flex-col max-w-full overflow-hidden">
+                    <div className="p-5 h-full flex flex-col max-w-full overflow-hidden">
                         {/* Header */}
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center justify-between mb-6">
                             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                                 <File size={16} />
                                 Files
                             </h2>
                             <button
                                 onClick={() => setShowNewFileInput(true)}
-                                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
                                 title="Create new file"
                             >
                                 <Plus size={16} />
@@ -591,8 +592,8 @@ function Home() {
                         {/* New File Input */}
                         {showNewFileInput && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-                                <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-                                    <h2 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">Create or Import File</h2>
+                                <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg mx-4">
+                                    <h2 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-6">Create or Import File</h2>
 
                                     <input
                                         type="file"
@@ -603,7 +604,7 @@ function Home() {
 
                                     <button
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 mb-4"
+                                        className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 mb-6 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded"
                                     >
                                         <Upload size={16} />
                                         Import from device
@@ -614,7 +615,7 @@ function Home() {
                                         value={newFileName}
                                         onChange={(e) => setNewFileName(e.target.value)}
                                         placeholder="filename.js"
-                                        className="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500"
+                                        className="w-full p-3 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500"
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
                                                 handleCreateFile();
@@ -626,10 +627,10 @@ function Home() {
                                         autoFocus
                                     />
 
-                                    <div className="flex justify-end gap-2 mt-4">
+                                    <div className="flex justify-end gap-3 mt-6">
                                         <button
                                             onClick={handleCreateFile}
-                                            className="px-4 py-1.5 text-sm rounded-md bg-gray-800 dark:bg-gray-600 text-white hover:bg-gray-700 dark:hover:bg-gray-500"
+                                            className="px-5 py-2 text-sm rounded-md bg-gray-800 dark:bg-gray-600 text-white hover:bg-gray-700 dark:hover:bg-gray-500"
                                         >
                                             Create
                                         </button>
@@ -638,7 +639,7 @@ function Home() {
                                                 setShowNewFileInput(false);
                                                 setNewFileName('');
                                             }}
-                                            className="px-4 py-1.5 text-sm rounded-md bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500"
+                                            className="px-5 py-2 text-sm rounded-md bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500"
                                         >
                                             Cancel
                                         </button>
@@ -650,11 +651,11 @@ function Home() {
                         {/* File List */}
                         <div className="flex-1 overflow-y-auto overflow-hidden">
                             {files.length > 0 ? (
-                                <div className="space-y-1">
+                                <div className="space-y-2">
                                     {files.map((file, idx) => (
                                         <div
                                             key={idx}
-                                            className={`group flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors min-w-0 ${activeFile?.filename === file.filename
+                                            className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors min-w-0 ${activeFile?.filename === file.filename
                                                 ? 'bg-blue-50 dark:bg-blue-900/50 border border-blue-200 dark:border-blue-700'
                                                 : 'hover:bg-gray-50 dark:hover:bg-gray-700'
                                                 }`}
@@ -693,7 +694,7 @@ function Home() {
             {/* CENTER - Editor */}
             <div className="flex-1 flex flex-col">
                 {/* Top Navigation Bar */}
-                <div className="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6">
+                <div className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-8">
                     {/* Left Section - Room Info */}
                     {/* <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -707,12 +708,12 @@ function Home() {
                     </div> */}
 
                     {/* Right Section - Actions */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 ml-auto">
                         {/* Save Dropdown */}
 
                         <button
                             onClick={() => runCode()}
-                            className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors ${isCodeRunnable && activeFile?.langID
+                            className={`flex items-center gap-2 px-4 py-2 text-sm rounded-md transition-colors ${isCodeRunnable && activeFile?.langID
                                 ? 'bg-gray-00 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white dark:bg-gray-700'
                                 : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                                 }`}
@@ -720,14 +721,14 @@ function Home() {
                         >
                             <Terminal size={16} />
                             <span>Run Code</span>
-                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400 font-mono bg-gray-50 dark:bg-gray-700 px-1.5 py-0.5 rounded border dark:border-gray-600">
+                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400 font-mono bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded border dark:border-gray-600">
                                 Ctrl + `
                             </span>
                         </button>
                         <div className="relative">
                             <button
                                 onClick={() => setShowSaveDropdown(!showSaveDropdown)}
-                                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md transition-colors"
+                                className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md transition-colors"
                             >
                                 <Save size={16} />
                                 Save
@@ -735,11 +736,11 @@ function Home() {
                             </button>
 
                             {showSaveDropdown && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
-                                    <div className="py-1">
+                                <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
+                                    <div className="py-2">
                                         <button
                                             onClick={() => downloadFile(activeFile.filename, activeFile.content)}
-                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            className="w-full text-left px-5 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                                         >
                                             Save This File
                                         </button>
@@ -751,7 +752,7 @@ function Home() {
                                         </button> */}
                                         <button
                                             onClick={() => setOpenFileSelectModal(true)}
-                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            className="w-full text-left px-5 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                                         >
                                             Save Entire Project
                                         </button>
@@ -762,7 +763,7 @@ function Home() {
 
                         <button
                             onClick={() => { copyCodeToClipboard(); }}
-                            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md transition-colors"
                         >
                             {copied ? <ClipboardCheck size={16} /> : <Copy size={16} />}
                             {copied ? "Copied!" : "Copy"}
@@ -772,7 +773,7 @@ function Home() {
                         <div className="relative">
                             <button
                                 onClick={() => setShowDropdown(!showDropdown)}
-                                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-md transition-colors"
+                                className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-md transition-colors"
                             >
                                 <Settings size={16} />
                                 Settings
@@ -780,14 +781,14 @@ function Home() {
                             </button>
 
                             {showDropdown && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
-                                    <div className="py-1">
+                                <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
+                                    <div className="py-2">
                                         <button
                                             onClick={() => {
                                                 setOpenModal(true);
                                                 setShowDropdown(false);
                                             }}
-                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            className="w-full text-left px-5 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                                         >
                                             Change Room
                                         </button>
@@ -796,7 +797,7 @@ function Home() {
                                                 setShowDropdown(false);
                                                 // Handle editor settings logic here
                                             }}
-                                            className="w-full flex gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            className="w-full flex gap-2 px-5 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                                         >
                                             <DarkModeToggle />
                                         </button>
@@ -804,11 +805,11 @@ function Home() {
                                             onClick={() => {
                                                 setShowDropdown(false);
                                             }}
-                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            className="w-full text-left px-5 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                                         >
                                             Editor Settings
                                         </div>
-                                        <button onClick={() => setRunforPeer(!runforPeer)} className='w-full flex gap-2 text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700'>
+                                        <button onClick={() => setRunforPeer(!runforPeer)} className='w-full flex gap-2 text-left px-5 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700'>
                                             {runforPeer ? <Check size={16} /> : ""} Run for peer
                                         </button>
                                         <button
@@ -816,7 +817,7 @@ function Home() {
                                                 setOpenModal(true);
                                                 setShowDropdown(false);
                                             }}
-                                            className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            className="w-full text-left px-5 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                                         >
                                             Leave Room
                                         </button>
@@ -824,13 +825,12 @@ function Home() {
                                 </div>
                             )}
                         </div>
-                        {formatTime(timer)}
                     </div>
                 </div>
 
                 {/* Active File Tab */}
                 {activeFile && (
-                    <div className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-2">
+                    <div className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-8 py-3">
                         <div className="flex items-center gap-2">
                             <File size={14} className="text-gray-500 dark:text-gray-400" />
                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{activeFile.filename}</span>
@@ -898,7 +898,7 @@ function Home() {
                         <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900">
                             <div className="text-center">
                                 <File size={48} className="mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-                                <p>No file selected</p>
+                                <p className="mb-2">No file selected</p>
                                 <p className="text-sm">Create or select a file to start coding</p>
                             </div>
                         </div>
@@ -914,12 +914,12 @@ function Home() {
                 />
 
                 {showOutput && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                        <div className="bg-white dark:bg-gray-800 w-full max-w-md p-6 rounded-lg shadow-lg relative">
-                            <div className="flex items-center justify-between mb-4">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                        <div className="bg-white dark:bg-gray-800 w-full max-w-md p-8 rounded-lg shadow-lg relative">
+                            <div className="flex items-center justify-between mb-6">
                                 <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Output</h2>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-400 font-mono bg-gray-50 dark:bg-gray-700 px-1.5 py-0.5 rounded border dark:border-gray-600">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xs text-gray-400 font-mono bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded border dark:border-gray-600">
                                         Esc
                                     </span>
                                     <button
@@ -930,7 +930,7 @@ function Home() {
                                     </button>
                                 </div>
                             </div>
-                            <pre className="bg-gray-100 dark:bg-gray-700 p-3 rounded-md text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words max-h-64 overflow-auto">
+                            <pre className="bg-gray-100 dark:bg-gray-700 p-4 rounded-md text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words max-h-64 overflow-auto">
                                 {loading ? "Running..." : output || "No output"}
                             </pre>
                         </div>
@@ -952,7 +952,7 @@ function Home() {
                         setRoomID(roomId || "");
                         setUsername(userName || "");
                         if (roomId) {
-                            socket.emit("joinRoom", roomId);
+                            socket.emit("joinRoom", roomId, userName);
                         }
                     }}
                     userType={joinRoom ? "join" : "create"}

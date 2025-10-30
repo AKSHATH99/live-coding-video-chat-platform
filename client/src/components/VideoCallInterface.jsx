@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, use } from "react";
 import { io } from "socket.io-client";
-import { Mic, Video, VideoOff, MicOff, FileCode2, Users } from "lucide-react"; // Assuming you have lucide-react installed for icons
+import { Mic, Video, VideoOff, MicOff, FileCode2, Users, AlarmClock } from "lucide-react"; // Assuming you have lucide-react installed for icons
 const SOCKET_SERVER_URL =
   import.meta.env.PROD
     ? window.location.origin // same origin as production
@@ -15,6 +15,7 @@ const VideoCallInterface = () => {
   const [stream, setStream] = useState(null);
   const [cameraOn, setCameraOn] = useState(false);
   const [microphoneOn, setMicrophoneOn] = useState(false);
+  const [peerMicrophoneOff, setPeerMicrophoneOff] = useState(false);
   const [roomID, setRoomID] = useState("");
   const [peerCameraOff, setPeerCameraOff] = useState(false);
   const [callStarted, setCallStarted] = useState(false);
@@ -23,6 +24,9 @@ const VideoCallInterface = () => {
   const [newMessage, setNewMessage] = useState("");
   const [username, setUsername] = useState("user123"); // Replace with actual username if you have it
   const [joinedUser, setJoinedUser] = useState(null);
+  const [startTimer, setStartTimer] = useState(false);
+  const [timer, setTimer] = useState(0);
+  const intervalRef = useRef(null);
 
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
@@ -48,8 +52,9 @@ const VideoCallInterface = () => {
   // For testing, set a default room ID
   useEffect(() => {
     const storedRoom = localStorage.getItem("roomId");
+    const username = localStorage.getItem("userName");
     setRoomID(storedRoom);
-    socket.emit("joinRoom", storedRoom);
+    socket.emit("joinRoom", storedRoom, username);
     console.log(`Joined room ${storedRoom}`);
   }, []);
 
@@ -130,9 +135,9 @@ const VideoCallInterface = () => {
     };
 
     // Socket event listeners
-    socket.on("user-joined", ({ userId, username }) => {
-      console.log("User joined:", userId, username);
-      setJoinedUser(username);
+    socket.on("user-joined", ({ userId, userName }) => {
+      console.log("User joined:", userId, userName);
+      setJoinedUser(userName);
     });
 
     socket.on("answer", async ({ answer, from }) => {
@@ -178,6 +183,15 @@ const VideoCallInterface = () => {
       console.log("Peer camera is on");
       setPeerCameraOff(false);
     });
+    socket.on("microphone-off", ({ from }) => {
+      console.log("Peer microphone is off");
+      setPeerMicrophoneOff(true);
+    });
+
+    socket.on("microphone-on", ({ from }) => {
+      console.log("Peer microphone is on");
+      setPeerMicrophoneOff(false);
+    });
 
     socket.on("receiveMessage", ({ username, message, timestamp }) => {
       setMessages((prev) => [
@@ -195,6 +209,8 @@ const VideoCallInterface = () => {
       socket.off("camera-off");
       socket.off("camera-on");
       socket.off("receiveMessage");
+      socket.off("microphone-off");  // ADD THIS
+      socket.off("microphone-on");
 
 
     };
@@ -213,6 +229,19 @@ const VideoCallInterface = () => {
     }
   }, [cameraOn, roomID]);
 
+  // Notify peer when microphone state changes
+  useEffect(() => {
+    if (roomID) {
+      if (!microphoneOn) {
+        console.log("Microphone is off, notifying peer");
+        socket.emit('microphone-off', { roomID });
+      } else {
+        console.log("Microphone is on, notifying peer");
+        socket.emit('microphone-on', { roomID });
+      }
+    }
+  }, [microphoneOn, roomID]);
+
   // Start call function
   const startCall = async () => {
     if (!stream) {
@@ -228,6 +257,10 @@ const VideoCallInterface = () => {
       await peer.setLocalDescription(offer);
       socket.emit("offer", { roomID, offer });
       setCallStarted(true);
+      console.log("Call started, offer sent");
+      intervalRef.current = setInterval(() => {
+        setTimer(prev => prev + 1);
+      }, 1000);
     } catch (error) {
       console.error("Error starting call:", error);
     }
@@ -248,23 +281,34 @@ const VideoCallInterface = () => {
       setNewMessage("");
     }
   };
+  const formatTime = (secs) => {
+    const mins = Math.floor(secs / 60).toString().padStart(2, "0");
+    const seconds = (secs % 60).toString().padStart(2, "0");
+    return `${mins}:${seconds}`;
+  };
 
-return (
+  return (
     <div className="w-1/3 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col text-sm">
 
       {/* Video Section */}
       <div className="p-4 space-y-6 flex-1 overflow-y-auto">
 
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <Users size={16} />
-                            <span className="font-medium text-gray-900 dark:text-gray-100">Room : {roomID || "No room"}</span>
-                        </div>
-                        {/* <div className="w-px h-4 bg-gray-300"></div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <Users size={16} />
+            <span className="font-medium text-gray-900 dark:text-gray-100">Room : {roomID || "No room"}</span>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 border border-blue-200 dark:border-gray-500 rounded-lg shadow-sm">
+            <AlarmClock size={16} className="text-blue-600 dark:text-blue-400" />
+            <span className="text-sm font-mono font-semibold text-gray-800 dark:text-gray-100 tracking-wide">
+              {timer > 0 ? formatTime(timer) : "00:00"}
+            </span>
+          </div>
+          {/* <div className="w-px h-4 bg-gray-300"></div>
                         <div className="text-sm text-gray-600">
                             <span className="font-medium text-gray-900">{username || "Anonymous"}</span>
                         </div> */}
-                    </div>
+        </div>
         {/* Local Video */}
         <div>
           <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Your Video</h3>
@@ -310,6 +354,10 @@ return (
             />
           )}
         </div>
+        <div>
+          {peerConnected && <span className="text-xs text-green-600 dark:text-green-400">(Connected)</span>}
+          {peerMicrophoneOff && <span className="text-xs text-red-600 dark:text-red-400 ml-2">(Mic Off)</span>}
+        </div>
       </div>
 
       {/* Chat Section */}
@@ -351,8 +399,8 @@ return (
           onClick={startCall}
           disabled={!stream || callStarted}
           className={`w-full py-2 rounded text-white transition ${!stream || callStarted
-              ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed"
-              : "bg-gray-800 dark:bg-gray-600 hover:bg-gray-700 dark:hover:bg-gray-500"
+            ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed"
+            : "bg-gray-800 dark:bg-gray-600 hover:bg-gray-700 dark:hover:bg-gray-500"
             }`}
         >
           {callStarted ? "Call Started" : "Start Call"}
