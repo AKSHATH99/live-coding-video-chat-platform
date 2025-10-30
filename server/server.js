@@ -99,6 +99,10 @@ io.on("connection", (socket) => {
     socket.to(roomId).emit("newFile", { file });
   });
 
+  socket.on('call-ended', ({ roomID }) => {
+    socket.to(roomID).emit('call-ended', { from: socket.id });
+  });
+
 
 
 

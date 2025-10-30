@@ -166,6 +166,7 @@ const VideoCallInterface = () => {
         const answer = await peer.createAnswer();
         await peer.setLocalDescription(answer);
         socket.emit("answer", { answer, roomID });
+        setCallStarted(true);
       } catch (error) {
         console.error("Error handling offer:", error);
       }
@@ -200,6 +201,38 @@ const VideoCallInterface = () => {
       ]);
     });
 
+    socket.on("call-ended", ({ from }) => {
+      console.log("Peer ended the call");
+
+      // Close peer connection
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+        // Create new peer connection
+        peerConnectionRef.current = new RTCPeerConnection({
+          iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+        });
+      }
+
+      // Clear remote video
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = null;
+      }
+
+      // Stop timer
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+
+      // Reset peer-related states
+      setCallStarted(false);
+      setPeerConnected(false);
+      setPeerCameraOff(false);
+      setPeerMicrophoneOff(false);
+      setTimer(0);
+
+      alert("Your peer has ended the call");
+    });
 
     return () => {
       socket.off("user-joined");
@@ -211,6 +244,7 @@ const VideoCallInterface = () => {
       socket.off("receiveMessage");
       socket.off("microphone-off");  // ADD THIS
       socket.off("microphone-on");
+      socket.off("call-ended")
 
 
     };
@@ -264,6 +298,56 @@ const VideoCallInterface = () => {
     } catch (error) {
       console.error("Error starting call:", error);
     }
+  };
+
+
+  const endCall = () => {
+    console.log("Ending call...");
+
+    // Stop all media tracks
+    if (stream) {
+      stream.getTracks().forEach((track) => {
+        track.stop();
+      });
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = null;
+      }
+      setStream(null);
+    }
+
+    // Close peer connection
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      // Create new peer connection for future calls
+      peerConnectionRef.current = new RTCPeerConnection({
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      });
+    }
+
+    // Clear remote video
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = null;
+    }
+
+    // Stop timer
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    // Notify peer that you're ending the call
+    socket.emit('call-ended', { roomID });
+
+    // Reset states
+    setCameraOn(false);
+    setMicrophoneOn(false);
+    setCallStarted(false);
+    setPeerConnected(false);
+    setPeerCameraOff(false);
+    setPeerMicrophoneOff(false);
+    setTimer(0);
+
+    console.log("Call ended successfully");
   };
 
   // Handle sending messages
@@ -394,17 +478,27 @@ const VideoCallInterface = () => {
       </div>
 
       {/* Call Controls */}
+      {/* Call Controls */}
       <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3">
-        <button
-          onClick={startCall}
-          disabled={!stream || callStarted}
-          className={`w-full py-2 rounded text-white transition ${!stream || callStarted
-            ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed"
-            : "bg-gray-800 dark:bg-gray-600 hover:bg-gray-700 dark:hover:bg-gray-500"
-            }`}
-        >
-          {callStarted ? "Call Started" : "Start Call"}
-        </button>
+        {!callStarted ? (
+          <button
+            onClick={startCall}
+            disabled={!stream}
+            className={`w-full py-2 rounded text-white transition ${!stream
+              ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed"
+              : "bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600"
+              }`}
+          >
+            Start Call
+          </button>
+        ) : (
+          <button
+            onClick={endCall}
+            className="w-full py-2 rounded text-white bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 transition"
+          >
+            End Call
+          </button>
+        )}
       </div>
     </div>
 
