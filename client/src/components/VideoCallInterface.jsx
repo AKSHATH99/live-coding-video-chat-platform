@@ -483,8 +483,8 @@ const VideoCallInterface = () => {
         {!callStarted ? (
           <button
             onClick={startCall}
-            disabled={!stream}
-            className={`w-full py-2 rounded text-white transition ${!stream
+            disabled={!stream || roomID == null}
+            className={`w-full py-2 rounded text-white transition ${!stream || roomID == null
               ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed"
               : "bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600"
               }`}

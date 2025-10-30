@@ -14,6 +14,7 @@ const socket = socketIOClient(SOCKET_SERVER_URL, {
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
+import Landing from './pages/Landing';
 
 
 function App() {
@@ -102,7 +103,8 @@ function App() {
 
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Landing />} />
+        <Route path="/code" element={<Home />} />
       </Routes>
     </Router>
   );
