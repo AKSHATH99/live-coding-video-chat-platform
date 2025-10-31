@@ -57,7 +57,7 @@ function Home() {
     const [output, setOutput] = useState('');
     const [loading, setLoading] = useState(false);
     const [showOutput, setShowOutput] = useState(false);
-    const [showTerminal, setShowTerminal] = useState(false);
+    const [showTerminal, setShowTerminal] = useState(true);
     const [runforPeer, setRunforPeer] = useState(true);
 
     const [files, setFiles] = useState([]);
@@ -314,7 +314,9 @@ function Home() {
         if (currentContent.trim() === (lastRanCodeRef.current?.trim() ?? '')) {
             console.log("⚡ No changes, using cached output");
             setOutput(lastRanOutputRef.current || "No output from last run");
-            setShowTerminal(true);
+            if(showTerminal === false) {
+                setShowTerminal(true);
+            }
             return;
         }
 
@@ -597,7 +599,6 @@ function Home() {
 
                                     <input
                                         type="file"
-                                        ref={fileInputRef}
                                         onChange={handleFileUpload}
                                         style={{ display: "none" }}
                                     />
@@ -693,24 +694,8 @@ function Home() {
 
             {/* CENTER - Editor */}
             <div className="flex-1 flex flex-col">
-                {/* Top Navigation Bar */}
                 <div className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-8">
-                    {/* Left Section - Room Info */}
-                    {/* <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Users size={16} />
-                            <span className="font-medium text-gray-900">{roomID || "No room"}</span>
-                        </div>
-                        <div className="w-px h-4 bg-gray-300"></div>
-                        <div className="text-sm text-gray-600">
-                            <span className="font-medium text-gray-900">{username || "Anonymous"}</span>
-                        </div>
-                    </div> */}
-
-                    {/* Right Section - Actions */}
                     <div className="flex items-center gap-3 ml-auto">
-                        {/* Save Dropdown */}
-
                         <button
                             onClick={() => runCode()}
                             className={`flex items-center gap-2 px-4 py-2 text-sm rounded-md transition-colors ${isCodeRunnable && activeFile?.langID
@@ -744,12 +729,6 @@ function Home() {
                                         >
                                             Save This File
                                         </button>
-                                        {/* <button
-                                            onClick={() => downloadAllFilesAsZip(files)}
-                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                                        >
-                                            Save Entire Project
-                                        </button> */}
                                         <button
                                             onClick={() => setOpenFileSelectModal(true)}
                                             className="w-full text-left px-5 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -829,17 +808,17 @@ function Home() {
                 </div>
 
                 {/* Active File Tab */}
-                {activeFile && (
+                {/* {activeFile && (
                     <div className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-8 py-3">
                         <div className="flex items-center gap-2">
                             <File size={14} className="text-gray-500 dark:text-gray-400" />
                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{activeFile.filename}</span>
                         </div>
                     </div>
-                )}
+                )} */}
 
                 {/* Code Editor */}
-                <div className={`${showTerminal ? 'flex-1' : 'flex-1'}`}>
+                <div className={`${showTerminal ? 'flex-[0.6]' : 'flex-1'} mt-10 overflow-hidden`}>
                     {activeFile ? (
                         <Editor
                             // key={activeFile.filename} // 👈 force remount on file change
@@ -904,16 +883,22 @@ function Home() {
                         </div>
                     )}
                 </div>
-                <TerminalOutput
-                    output={output}
-                    loading={loading}
-                    isVisible={showTerminal}
-                    onClose={() => setShowTerminal(false)}
-                    onClear={clearOutput}
-                    initialHeight={200}
-                />
 
-                {showOutput && (
+                {/* Terminal Output - Always visible when showTerminal is true */}
+                {showTerminal && (
+                    <div className="flex-[0.4] border-t border-gray-200  dark:border-gray-700">
+                        <TerminalOutput
+                            output={output}
+                            loading={loading}
+                            isVisible={showTerminal}
+                            onClose={() => setShowTerminal(false)}
+                            onClear={clearOutput}
+                            initialHeight={200}
+                        />
+                    </div>
+                )}
+
+                {/* {showOutput && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
                         <div className="bg-white dark:bg-gray-800 w-full max-w-md p-8 rounded-lg shadow-lg relative">
                             <div className="flex items-center justify-between mb-6">
@@ -935,7 +920,7 @@ function Home() {
                             </pre>
                         </div>
                     </div>
-                )}
+                )} */}
             </div>
 
             {/* RIGHT - Video Call Section */}

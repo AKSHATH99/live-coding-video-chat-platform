@@ -1,6 +1,8 @@
 import { useRef, useEffect, useState, use } from "react";
 import { io } from "socket.io-client";
 import { Mic, Video, VideoOff, MicOff, FileCode2, Users, AlarmClock } from "lucide-react"; // Assuming you have lucide-react installed for icons
+import RoomIDModal from "./RoomIDModal";
+
 const SOCKET_SERVER_URL =
   import.meta.env.PROD
     ? window.location.origin // same origin as production
@@ -27,6 +29,8 @@ const VideoCallInterface = () => {
   const [startTimer, setStartTimer] = useState(false);
   const [timer, setTimer] = useState(0);
   const intervalRef = useRef(null);
+  const [openRoommodal, setOpenRoommodal] = useState(false);
+  const messagesEndRef = useRef(null);
 
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
@@ -52,6 +56,10 @@ const VideoCallInterface = () => {
   // For testing, set a default room ID
   useEffect(() => {
     const storedRoom = localStorage.getItem("roomId");
+    if (!storedRoom) {
+      setOpenRoommodal(true);
+      return;
+    }
     const username = localStorage.getItem("userName");
     setRoomID(storedRoom);
     socket.emit("joinRoom", storedRoom, username);
@@ -371,27 +379,30 @@ const VideoCallInterface = () => {
     return `${mins}:${seconds}`;
   };
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   return (
-    <div className="w-1/3 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col text-sm">
+    <div className="w-1/3 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col text-sm h-screen">
 
       {/* Video Section */}
-      <div className="p-4 space-y-6 flex-1 overflow-y-auto">
+      <div className="p-4 space-y-6">
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+          {roomID ? <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <Users size={16} />
             <span className="font-medium text-gray-900 dark:text-gray-100">Room : {roomID || "No room"}</span>
-          </div>
+          </div> : <button onClick={() => setOpenRoommodal(true)}>
+            <Users size={16} />
+            Join Room
+          </button>}
           <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 border border-blue-200 dark:border-gray-500 rounded-lg shadow-sm">
             <AlarmClock size={16} className="text-blue-600 dark:text-blue-400" />
             <span className="text-sm font-mono font-semibold text-gray-800 dark:text-gray-100 tracking-wide">
               {timer > 0 ? formatTime(timer) : "00:00"}
             </span>
           </div>
-          {/* <div className="w-px h-4 bg-gray-300"></div>
-                        <div className="text-sm text-gray-600">
-                            <span className="font-medium text-gray-900">{username || "Anonymous"}</span>
-                        </div> */}
         </div>
         {/* Local Video */}
         <div>
@@ -421,10 +432,19 @@ const VideoCallInterface = () => {
 
         {/* Peer Video */}
         <div>
-          <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">
-            {joinedUser ? `Peer Video (${joinedUser})` : "Peer Video"}{" "}
-            {peerConnected && <span className="text-xs text-green-600 dark:text-green-400">(Connected)</span>}
-          </h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold text-gray-800 dark:text-gray-200">
+              {joinedUser ? `Peer Video (${joinedUser})` : "Peer Video"}
+            </h3>
+            <div className="flex items-center gap-2">
+              {peerConnected && <span className="text-xs text-green-600 dark:text-green-400">(Connected)</span>}
+              {peerConnected && (
+                peerMicrophoneOff ? 
+                  <MicOff size={16} className="text-red-600 dark:text-red-400" /> : 
+                  <Mic size={16} className="text-green-600 dark:text-green-400" />
+              )}
+            </div>
+          </div>
           {peerCameraOff ? (
             <div className="w-full h-48 bg-gray-800 dark:bg-gray-900 text-white flex items-center justify-center rounded-md">
               Your friend turned off their video
@@ -438,15 +458,11 @@ const VideoCallInterface = () => {
             />
           )}
         </div>
-        <div>
-          {peerConnected && <span className="text-xs text-green-600 dark:text-green-400">(Connected)</span>}
-          {peerMicrophoneOff && <span className="text-xs text-red-600 dark:text-red-400 ml-2">(Mic Off)</span>}
-        </div>
       </div>
 
       {/* Chat Section */}
-      <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3 space-y-3 max-h-[200px]">
-        <div className="overflow-y-auto max-h-32 bg-gray-100 dark:bg-gray-700 rounded p-2 text-sm">
+      <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3 space-y-3 flex-1 flex flex-col min-h-0">
+        <div className="overflow-y-auto flex-1 bg-gray-100 dark:bg-gray-700 rounded p-2 text-sm">
           {messages.length === 0 ? (
             <p className="text-gray-500 dark:text-gray-400 text-center">No messages yet</p>
           ) : (
@@ -457,6 +473,7 @@ const VideoCallInterface = () => {
               </div>
             ))
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         <div className="flex gap-2">
@@ -470,6 +487,7 @@ const VideoCallInterface = () => {
           />
           <button
             onClick={sendMessage}
+            disabled={!newMessage.trim() || !peerConnected || !callStarted || !roomID}
             className="bg-gray-800 dark:bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 dark:hover:bg-gray-500"
           >
             Send
@@ -477,7 +495,6 @@ const VideoCallInterface = () => {
         </div>
       </div>
 
-      {/* Call Controls */}
       {/* Call Controls */}
       <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3">
         {!callStarted ? (
@@ -500,6 +517,8 @@ const VideoCallInterface = () => {
           </button>
         )}
       </div>
+
+      {openRoommodal && <RoomIDModal isOpen={openRoommodal} onClose={() => setOpenRoommodal(false)} />}
     </div>
 
   );
