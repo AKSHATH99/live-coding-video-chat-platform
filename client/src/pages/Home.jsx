@@ -304,9 +304,9 @@ function Home() {
     const runCode = async () => {
         const currentContent = editorRef.current?.getValue() ?? '';
 
+
         if (!activeFile) {
             setOutput("Error: No active file");
-            setShowTerminal(true);
             return;
         }
 
@@ -314,9 +314,6 @@ function Home() {
         if (currentContent.trim() === (lastRanCodeRef.current?.trim() ?? '')) {
             console.log("⚡ No changes, using cached output");
             setOutput(lastRanOutputRef.current || "No output from last run");
-            if(showTerminal === false) {
-                setShowTerminal(true);
-            }
             return;
         }
 
@@ -491,6 +488,9 @@ function Home() {
                 if (!isInInput) {
                     console.log("Global Ctrl+` triggered!");
                     e.preventDefault();
+                    if (showTerminal === false) {
+                        setShowTerminal(true);
+                    }
                     runCode();
                 }
             }

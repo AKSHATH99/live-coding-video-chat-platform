@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, use } from "react";
 import { io } from "socket.io-client";
-import { Mic, Video, VideoOff, MicOff, FileCode2, Users, AlarmClock } from "lucide-react"; // Assuming you have lucide-react installed for icons
+import { UsersRound, Mic, Video, VideoOff, MicOff, FileCode2, Users, AlarmClock } from "lucide-react"; // Assuming you have lucide-react installed for icons
 import RoomIDModal from "./RoomIDModal";
 
 const SOCKET_SERVER_URL =
@@ -407,13 +407,20 @@ const VideoCallInterface = () => {
         {/* Local Video */}
         <div>
           <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Your Video</h3>
-          <video
-            ref={localVideoRef}
-            autoPlay
-            muted
-            playsInline
-            className="w-full h-48 bg-black rounded-md"
-          />
+          {cameraOn ? (
+            <video
+              ref={localVideoRef}
+              autoPlay
+              muted
+              playsInline
+              className="w-full h-48 bg-black rounded-md"
+            />
+          ) : (
+            <div className="w-full h-48 bg-gray-200 dark:bg-gray-800 flex flex-col items-center justify-center rounded-md border-2 border-dashed border-gray-300 dark:border-gray-700">
+              <VideoOff size={48} className="text-gray-400 dark:text-gray-600 mb-2" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">Camera is off</p>
+            </div>
+          )}
           <div className="flex items-center justify-start gap-3 mt-3">
             <button
               onClick={() => setCameraOn(prev => !prev)}
@@ -431,69 +438,48 @@ const VideoCallInterface = () => {
         </div>
 
         {/* Peer Video */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold text-gray-800 dark:text-gray-200">
-              {joinedUser ? `Peer Video (${joinedUser})` : "Peer Video"}
+        {peerConnected ? (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold text-gray-800 dark:text-gray-200">
+                {joinedUser ? `Peer Video (${joinedUser})` : "Peer Video"}
+              </h3>
+              <div className="flex items-center gap-2">
+                {peerConnected && <span className="text-xs text-green-600 dark:text-green-400">(Connected)</span>}
+                {peerConnected && (
+                  peerMicrophoneOff ?
+                    <MicOff size={16} className="text-red-600 dark:text-red-400" /> :
+                    <Mic size={16} className="text-green-600 dark:text-green-400" />
+                )}
+              </div>
+            </div>
+            {peerCameraOff ? (
+              <div className="w-full h-48 bg-gray-800 dark:bg-gray-900 text-white flex items-center justify-center rounded-md">
+                Your friend turned off their video
+              </div>
+            ) : (
+              <video
+                ref={remoteVideoRef}
+                autoPlay
+                playsInline
+                className="w-full h-48 bg-black rounded-md"
+              />
+            )}
+          </div>
+        ) : (
+          <div>
+            <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">
+              Peer Video
             </h3>
-            <div className="flex items-center gap-2">
-              {peerConnected && <span className="text-xs text-green-600 dark:text-green-400">(Connected)</span>}
-              {peerConnected && (
-                peerMicrophoneOff ? 
-                  <MicOff size={16} className="text-red-600 dark:text-red-400" /> : 
-                  <Mic size={16} className="text-green-600 dark:text-green-400" />
-              )}
+            <div className="w-full h-48 bg-gray-200 dark:bg-gray-800 flex flex-col items-center justify-center rounded-md border-2 border-dashed border-gray-300 dark:border-gray-700">
+              <VideoOff size={48} className="text-gray-400 dark:text-gray-600 mb-2" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">Waiting for peer to connect</p>
             </div>
           </div>
-          {peerCameraOff ? (
-            <div className="w-full h-48 bg-gray-800 dark:bg-gray-900 text-white flex items-center justify-center rounded-md">
-              Your friend turned off their video
-            </div>
-          ) : (
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="w-full h-48 bg-black rounded-md"
-            />
-          )}
-        </div>
+        )}
       </div>
 
-      {/* Chat Section */}
-      <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3 space-y-3 flex-1 flex flex-col min-h-0">
-        <div className="overflow-y-auto flex-1 bg-gray-100 dark:bg-gray-700 rounded p-2 text-sm">
-          {messages.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400 text-center">No messages yet</p>
-          ) : (
-            messages.map((msg, index) => (
-              <div key={index} className="mb-1">
-                <span className="font-semibold text-gray-700 dark:text-gray-300">{msg.username}:</span>{" "}
-                <span className="text-gray-800 dark:text-gray-200">{msg.message}</span>
-              </div>
-            ))
-          )}
-          <div ref={messagesEndRef} />
-        </div>
 
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            placeholder="Type a message..."
-            className="flex-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500"
-          />
-          <button
-            onClick={sendMessage}
-            disabled={!newMessage.trim() || !peerConnected || !callStarted || !roomID}
-            className="bg-gray-800 dark:bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 dark:hover:bg-gray-500"
-          >
-            Send
-          </button>
-        </div>
-      </div>
 
       {/* Call Controls */}
       <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3">
