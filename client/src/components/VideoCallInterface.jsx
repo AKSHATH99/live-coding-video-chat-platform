@@ -92,15 +92,25 @@ const VideoCallInterface = () => {
         })
         .catch((err) => console.error("getUserMedia failed", err));
     } else {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = null;
-        }
-        setStream(null);
-      }
+      // if (stream) {
+      //   stream.getTracks().forEach((track) => track.stop());
+      //   if (localVideoRef.current) {
+      //     localVideoRef.current.srcObject = null;
+      //   }
+      //   setStream(null);
+      // }
     }
   }, [cameraOn]);
+
+  // Add this NEW useEffect after the camera toggle useEffect
+  useEffect(() => {
+    if (stream) {
+      const videoTracks = stream.getVideoTracks();
+      videoTracks.forEach((track) => {
+        track.enabled = cameraOn;
+      });
+    }
+  }, [cameraOn, stream]);
 
   useEffect(() => {
     if (stream) {
