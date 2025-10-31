@@ -12,7 +12,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:5173", // ✅ Must match frontend
+    origin: "https://live-coding-video-chat-platform.onrender.com/", // ✅ Must match frontend
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -21,7 +21,7 @@ app.use(express.static(path.join(__dirname, '../client/dist')));
 // app.use(cors());
 //  // Your Vite dev server
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: 'https://live-coding-video-chat-platform.onrender.com/',
   // credentials: true // If you need to send cookies/auth headers
 }));
 // Initialize messaging server
