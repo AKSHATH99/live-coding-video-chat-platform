@@ -13,6 +13,7 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
     origin: "https://live-coding-video-chat-platform.onrender.com", // ✅ Must match frontend
+    // origin:"http://localhost:5173",
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -22,6 +23,7 @@ app.use(express.static(path.join(__dirname, '../client/dist')));
 //  // Your Vite dev server
 app.use(cors({
   origin: 'https://live-coding-video-chat-platform.onrender.com',
+  // origin: 'http://localhost:5173',
   // credentials: true // If you need to send cookies/auth headers
 }));
 // Initialize messaging server
@@ -97,6 +99,16 @@ io.on("connection", (socket) => {
   socket.on("newFile", ({ roomId, file }) => {
     console.log(`New file in room ${roomId}: ${file.filename}`);
     socket.to(roomId).emit("newFile", { file });
+  });
+
+  socket.on('cursorMove', ({ roomId, filename, position, username }) => {
+    // Broadcast to the other peer in the room
+    console.log(`Cursor move in room ${roomId} by ${username}`);
+    socket.to(roomId).emit('cursorMove', {
+      filename,
+      position,
+      username
+    });
   });
 
   socket.on('call-ended', ({ roomID }) => {

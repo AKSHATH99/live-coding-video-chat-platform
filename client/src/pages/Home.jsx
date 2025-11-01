@@ -11,6 +11,7 @@ import TerminalOutput from '../components/OutputTerminal';
 import DarkModeToggle from '../components/ThemeToggler';
 import { getLanguageIdFromFilename } from '../constants/judge0-language';
 import throttle from 'lodash/throttle'
+import '../../src/App.css';
 
 import {
     ChevronLeft,
@@ -78,6 +79,8 @@ function Home() {
     const isReceivingRemoteChange = useRef(false);
     const lastRanCodeRef = useRef('');
     const lastRanOutputRef = useRef('');
+    const [peerCursor, setPeerCursor] = useState(null); // Just one peer cursor
+    const PEER_CURSOR_COLOR = '#4ECDC4'; // Teal color for peer
 
 
 
@@ -235,7 +238,79 @@ function Home() {
             }
         });
 
+        editor.onDidChangeCursorPosition((e) => {
+            if (roomID && activeFile) {
+                const position = e.position;
+                console.log("Cursor moved to:", position);
+                socket.emit('cursorMove', {
+                    roomId: roomID,
+                    filename: activeFile.filename,
+                    position: {
+                        lineNumber: position.lineNumber,
+                        column: position.column
+                    },
+                    username: username
+                });
+            }
+        })
+
     };
+
+    // ✨ Render peer cursor in the editor
+    useEffect(() => {
+        if (!editorRef.current || !activeFile || !peerCursor || peerCursor.filename !== activeFile.filename) {
+            return;
+        }
+
+        // Get Monaco from the editor ref
+        const editor = editorRef.current;
+        const model = editor.getModel();
+
+        if (!model) return;
+
+        console.log("Rendering peer cursor at:", peerCursor.position);
+
+        try {
+            const decoration = [{
+                range: {
+                    startLineNumber: peerCursor.position.lineNumber,
+                    startColumn: peerCursor.position.column,
+                    endLineNumber: peerCursor.position.lineNumber,
+                    endColumn: peerCursor.position.column
+                },
+                options: {
+                    className: 'peer-cursor',
+                    stickiness: 1, // NeverGrowsWhenTypingAtEdges
+                    beforeContentClassName: 'peer-cursor-line',
+                    afterContentClassName: 'peer-cursor-label',
+                    after: {
+                        content: ` ${peerCursor.username || 'Peer'} `,
+                        inlineClassName: 'peer-cursor-label',
+                    }
+                }
+            }];
+
+            const decorationIds = editor.deltaDecorations([], decoration);
+            console.log("Decoration IDs:", decorationIds);
+
+            return () => {
+                if (editor) {
+                    editor.deltaDecorations(decorationIds, []);
+                }
+            };
+        } catch (error) {
+            console.error("Error rendering cursor decoration:", error);
+        }
+    }, [peerCursor, activeFile]);
+
+    // ✨ NEW: Clear peer cursor when switching files
+    useEffect(() => {
+        if (peerCursor && peerCursor.filename !== activeFile?.filename) {
+            setPeerCursor(null);
+        }
+    }, [activeFile?.filename]);
+
+
     const clearOutput = () => {
         setOutput('');
     };
@@ -450,10 +525,23 @@ function Home() {
             }
         });
 
+        socket.on('cursorMove', ({ filename, position, username }) => {
+            // Only show cursor for the active file
+            console.log(`Cursor move received for file: ${filename} by ${username}`);
+            if (filename === activeFileRef.current?.filename) {
+                setPeerCursor({
+                    position,
+                    username,
+                    filename
+                });
+            }
+        });
+
         return () => {
             socket.off("newFile");
             socket.off("codeDiff");
             socket.off("codeFullSync");
+            socket.off("cursorMove")
         };
     }, []);
 
