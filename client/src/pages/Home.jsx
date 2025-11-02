@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { useState, useEffect, useRef } from 'react'
 import Editor from '@monaco-editor/react'
 import socketIOClient from 'socket.io-client';
@@ -73,7 +73,7 @@ function Home() {
     const [timer, setTimer] = useState(0);
     const intervalRef = useRef(null);
 
-    const activeFileRef = React.useRef(activeFile);
+    const activeFileRef = useRef(activeFile);
     const fileInputRef = useRef(null);
     const editorRef = useRef(null);
     const isReceivingRemoteChange = useRef(false);
@@ -486,44 +486,53 @@ function Home() {
             }
         });
 
-        socket.on('codeFullSync', ({ filename, content }) => {
+        socket.on('codeFullSync', ({ filename, content, senderId }) => {
             console.log(`Full code sync received for file: ${filename}`);
 
-            // Only apply if it's for the currently active file
+            if (senderId === socket.id) {
+                console.log("Ignoring full sync from self");
+                return;
+            }
+
             if (filename !== activeFileRef.current?.filename) return;
 
-            const currentContent = editorRef.current?.getValue();
+            const editor = editorRef.current;
+            if (!editor) return;
 
-            // Update editor content without triggering onChange
-            if (editorRef.current && content !== currentContent) {
-                console.log("Applying remote full sync");
+            const currentContent = editor.getValue();
 
-                // Set flag to prevent onChange from firing
-                isReceivingRemoteChange.current = true;
+            // 🔥 Normalize both sides before comparison
+            const normalize = (str) =>
+                str.replace(/\r\n/g, '\n').trimEnd();
 
-                editorRef.current.setValue(content);
+            const normalizedCurrent = normalize(currentContent);
+            const normalizedIncoming = normalize(content);
 
-                // Update files state to keep it in sync
-                setFiles((prevFiles) =>
-                    prevFiles.map((file) =>
-                        file.filename === filename
-                            ? { ...file, content }
-                            : file
-                    )
-                );
-
-                // Update activeFile
-                setActiveFile((prev) => ({ ...prev, content }));
-
-                // Update lastSyncedContent to prevent sending this change back
+            if (normalizedCurrent === normalizedIncoming) {
+                console.log("Full sync content identical after normalization, skipping update");
                 lastSyncedContent.current = content;
-
-                // Reset flag after a brief delay
-                setTimeout(() => {
-                    isReceivingRemoteChange.current = false;
-                }, 100);
+                return;
             }
+
+            console.log("Applying remote full sync - content differs");
+
+            isReceivingRemoteChange.current = true;
+            editor.setValue(content);
+
+            setFiles((prevFiles) =>
+                prevFiles.map((file) =>
+                    file.filename === filename ? { ...file, content } : file
+                )
+            );
+
+            setActiveFile((prev) => ({ ...prev, content }));
+            lastSyncedContent.current = content;
+
+            setTimeout(() => {
+                isReceivingRemoteChange.current = false;
+            }, 100);
         });
+
 
         socket.on('cursorMove', ({ filename, position, username }) => {
             // Only show cursor for the active file
