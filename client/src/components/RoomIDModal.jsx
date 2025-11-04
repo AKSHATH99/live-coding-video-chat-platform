@@ -222,13 +222,13 @@ const RoomIDModal = ({ isOpen, onClose, userType = "join", joinRoomID }) => {
                 <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                   <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Room Link</p>
                   <p className="text-sm text-gray-800 dark:text-gray-200 break-all font-mono">
-                    {baseUrl}/?roomid={roomID}
+                    {baseUrl}/code?roomid={roomID}
                   </p>
                 </div>
 
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(`${baseUrl}/?roomid=${roomID}`);
+                    navigator.clipboard.writeText(`${baseUrl}/code?roomid=${roomID}`);
                     const button = document.activeElement;
                     const originalText = button.textContent;
                     button.textContent = '✓ Copied!';

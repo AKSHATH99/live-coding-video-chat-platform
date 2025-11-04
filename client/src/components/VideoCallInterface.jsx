@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, use } from "react";
 import { io } from "socket.io-client";
-import { UsersRound, Mic, Video, VideoOff, MicOff, FileCode2, Users, AlarmClock } from "lucide-react"; // Assuming you have lucide-react installed for icons
+import { UsersRound, Mic, Video, VideoOff, MicOff, FileCode2, Users, AlarmClock, Copy, Check } from "lucide-react"; // Assuming you have lucide-react installed for icons
 import RoomIDModal from "./RoomIDModal";
 
 const SOCKET_SERVER_URL =
@@ -28,12 +28,24 @@ const VideoCallInterface = () => {
   const [joinedUser, setJoinedUser] = useState(null);
   const [startTimer, setStartTimer] = useState(false);
   const [timer, setTimer] = useState(0);
+  const [copied, setCopied] = useState(false)
+
+
   const intervalRef = useRef(null);
   const [openRoommodal, setOpenRoommodal] = useState(false);
   const messagesEndRef = useRef(null);
 
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
+
+  const handleCopy = () => {
+    const baseUrl = `${window.location.protocol}//${window.location.host}`
+    const link = `${baseUrl}/code?roomid=${roomID}`
+    navigator.clipboard.writeText(link)
+
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   useEffect(() => {
     const username = localStorage.getItem('userName');
@@ -403,10 +415,25 @@ const VideoCallInterface = () => {
           {roomID ? <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <Users size={16} />
             <span className="font-medium text-gray-900 dark:text-gray-100">Room : {roomID || "No room"}</span>
+            <button
+              onClick={handleCopy}
+              className={`p-2 rounded-md transition-colors duration-300 ${copied
+                ? 'bg-green-600 dark:bg-green-700 text-white'
+                : 'bg-gray-200 dark:bg-gray-800'
+                }`}
+            >
+              {copied ? (
+                <Check className="hover:cursor-pointer transition-transform duration-200 scale-110" />
+              ) : (
+                <Copy className="hover:cursor-pointer" />
+              )}
+            </button>
           </div> : <button onClick={() => setOpenRoommodal(true)}>
             <Users size={16} />
             Join Room
-          </button>}
+          </button>
+          }
+
           <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 border border-blue-200 dark:border-gray-500 rounded-lg shadow-sm">
             <AlarmClock size={16} className="text-blue-600 dark:text-blue-400" />
             <span className="text-sm font-mono font-semibold text-gray-800 dark:text-gray-100 tracking-wide">
