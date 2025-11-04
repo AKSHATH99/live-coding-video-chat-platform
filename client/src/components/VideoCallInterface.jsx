@@ -418,14 +418,14 @@ const VideoCallInterface = () => {
             <button
               onClick={handleCopy}
               className={`p-2 rounded-md transition-colors duration-300 ${copied
-                ? 'bg-green-600 dark:bg-green-700 text-white'
+                ? ' text-white'
                 : 'bg-gray-200 dark:bg-gray-800'
                 }`}
             >
               {copied ? (
-                <Check className="hover:cursor-pointer transition-transform duration-200 scale-110" />
+                <Check className="hover:cursor-pointer transition-transform duration-200 scale-110" size={15} />
               ) : (
-                <Copy className="hover:cursor-pointer" />
+                <Copy className="hover:cursor-pointer" size={15} />
               )}
             </button>
           </div> : <button onClick={() => setOpenRoommodal(true)}>
